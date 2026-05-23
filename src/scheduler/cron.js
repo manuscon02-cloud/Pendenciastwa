@@ -39,7 +39,7 @@ async function sendReminders() {
   }
 
   const db = getDB();
-  const cfg = db.prepare('SELECT value FROM bot_config WHERE key = "group_id"').get();
+  const cfg = db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get();
 
   if (!cfg) {
     console.log('⚠️ Nenhum grupo configurado. Configure no dashboard.');

@@ -7,8 +7,8 @@ const { initScheduler, sendReminders } = require('../scheduler/cron');
 // ── STATUS ──────────────────────────────────────────────────────────────────
 router.get('/status', (req, res) => {
   const db = getDB();
-  const groupCfg  = db.prepare('SELECT value FROM bot_config WHERE key = "group_id"').get();
-  const groupName = db.prepare('SELECT value FROM bot_config WHERE key = "group_name"').get();
+  const groupCfg  = db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get();
+  const groupName = db.prepare("SELECT value FROM bot_config WHERE key = 'group_name'").get();
   const stats = db.prepare(`
     SELECT
       COUNT(*) FILTER (WHERE status = 'pendente')              AS pendente,
@@ -42,7 +42,7 @@ router.get('/qr', (req, res) => {
 // ── VALIDADORES ──────────────────────────────────────────────────────────────
 router.get('/validators', (req, res) => {
   const db = getDB();
-  const row = db.prepare('SELECT value FROM bot_config WHERE key = "validators"').get();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'validators'").get();
   try { res.json(JSON.parse(row?.value || '[]')); }
   catch { res.json([]); }
 });
@@ -51,21 +51,21 @@ router.post('/validators', (req, res) => {
   const { name, phone } = req.body;
   if (!name || !phone) return res.status(400).json({ error: 'name e phone obrigatórios' });
   const db = getDB();
-  const row = db.prepare('SELECT value FROM bot_config WHERE key = "validators"').get();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'validators'").get();
   let list = [];
   try { list = JSON.parse(row?.value || '[]'); } catch {}
   list.push({ name, phone: phone.replace(/\D/g, '') });
-  db.prepare('INSERT OR REPLACE INTO bot_config (key, value) VALUES ("validators", ?)').run(JSON.stringify(list));
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(JSON.stringify(list));
   res.json(list);
 });
 
 router.delete('/validators/:phone', (req, res) => {
   const db = getDB();
-  const row = db.prepare('SELECT value FROM bot_config WHERE key = "validators"').get();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'validators'").get();
   let list = [];
   try { list = JSON.parse(row?.value || '[]'); } catch {}
   list = list.filter(v => !v.phone.endsWith(req.params.phone.slice(-8)));
-  db.prepare('INSERT OR REPLACE INTO bot_config (key, value) VALUES ("validators", ?)').run(JSON.stringify(list));
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(JSON.stringify(list));
   res.json(list);
 });
 
@@ -83,8 +83,8 @@ router.post('/groups/select', (req, res) => {
   const { groupId, groupName } = req.body;
   if (!groupId) return res.status(400).json({ error: 'groupId obrigatório' });
   const db = getDB();
-  db.prepare('INSERT OR REPLACE INTO bot_config (key, value) VALUES ("group_id", ?)').run(groupId);
-  db.prepare('INSERT OR REPLACE INTO bot_config (key, value) VALUES ("group_name", ?)').run(groupName || groupId);
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('group_id', ?)").run(groupId);
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('group_name', ?)").run(groupName || groupId);
   res.json({ success: true });
 });
 
@@ -95,7 +95,7 @@ router.get('/pendencies', (req, res) => {
   let sql = 'SELECT * FROM pendencies';
   const params = [];
   if (status) { sql += ' WHERE status = ?'; params.push(status); }
-  sql += ' ORDER BY CASE priority WHEN "alta" THEN 1 WHEN "media" THEN 2 ELSE 3 END, deadline ASC';
+  sql += " ORDER BY CASE priority WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END, deadline ASC";
   res.json(db.prepare(sql).all(...params));
 });
 

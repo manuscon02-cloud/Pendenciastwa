@@ -13,7 +13,7 @@ function phoneMatch(a, b) {
 
 // Retorna array de phones dos validadores cadastrados
 function getValidators(db) {
-  const row = db.prepare('SELECT value FROM bot_config WHERE key = "validators"').get();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'validators'").get();
   if (!row) return [];
   try { return JSON.parse(row.value); } catch { return []; }
 }
@@ -32,7 +32,7 @@ async function handleMessage(msg) {
   if (!msg.from.includes('@g.us')) return;
 
   // Só responde no grupo configurado (se houver um configurado)
-  const groupCfg = db.prepare('SELECT value FROM bot_config WHERE key = "group_id"').get();
+  const groupCfg = db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get();
   if (groupCfg && msg.from !== groupCfg.value) return;
 
   const senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
@@ -53,12 +53,12 @@ async function handleMessage(msg) {
     }
 
     const pendency = db.prepare(
-      'SELECT * FROM pendencies WHERE id = ? AND status = "pendente"'
+      "SELECT * FROM pendencies WHERE id = ? AND status = 'pendente'"
     ).get(id);
 
     if (!pendency) {
       const inReview = db.prepare(
-        'SELECT * FROM pendencies WHERE id = ? AND status = "aguardando_validacao"'
+        "SELECT * FROM pendencies WHERE id = ? AND status = 'aguardando_validacao'"
       ).get(id);
       if (inReview) {
         const names = getValidatorNames(db) || 'os validadores';
@@ -134,7 +134,7 @@ async function handleMessage(msg) {
     }
 
     const pendency = db.prepare(
-      'SELECT * FROM pendencies WHERE id = ? AND status = "aguardando_validacao"'
+      "SELECT * FROM pendencies WHERE id = ? AND status = 'aguardando_validacao'"
     ).get(id);
 
     if (!pendency) {
@@ -180,7 +180,7 @@ async function handleMessage(msg) {
     }
 
     const pendency = db.prepare(
-      'SELECT * FROM pendencies WHERE id = ? AND status = "aguardando_validacao"'
+      "SELECT * FROM pendencies WHERE id = ? AND status = 'aguardando_validacao'"
     ).get(id);
 
     if (!pendency) {
@@ -210,8 +210,8 @@ async function handleMessage(msg) {
 
   // ── #status ───────────────────────────────────────────────────────────────
   if (body === '#status') {
-    const pendentes = db.prepare('SELECT * FROM pendencies WHERE status = "pendente" ORDER BY deadline ASC').all();
-    const emValidacao = db.prepare('SELECT * FROM pendencies WHERE status = "aguardando_validacao"').all();
+    const pendentes = db.prepare("SELECT * FROM pendencies WHERE status = 'pendente' ORDER BY deadline ASC").all();
+    const emValidacao = db.prepare("SELECT * FROM pendencies WHERE status = 'aguardando_validacao'").all();
 
     if (pendentes.length === 0 && emValidacao.length === 0) {
       await msg.reply('🎉 *Todas as pendências foram concluídas!*');
