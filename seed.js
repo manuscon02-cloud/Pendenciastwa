@@ -1,25 +1,27 @@
 /**
  * SEED – Pendências da Obra Montes Claros
  * Execute: node seed.js
- * ⚠️  Atualize os números de telefone antes de rodar!
  */
 
 require('dotenv').config();
 const { initDB, getDB } = require('./src/db/database');
 
-// ─── EDITE OS NÚMEROS AQUI (somente dígitos, com DDD) ───────────────────────
 const PHONES = {
-  gaspar:       '31999990001',   // ← coloque o número do Gaspar
-  vagner:       '31999990002',   // ← coloque o número do Vagner
-  arnaldo:      '31999990003',   // ← coloque o número do Arnaldo
-  lucas:        '31999990004',   // ← coloque o número do Lucas
-  almoxarifado: '31999990005',   // ← coloque o número do responsável do almoxarifado
-  compras:      '31999990006',   // ← coloque o número do responsável de compras
-  nestle:       '31999990007',   // ← coordenador que trata com a Nestlé
+  gaspar:       '16997868778',
+  vagner:       '16991836993',
+  arnaldo:      '16988188987',
+  lucas:        '16991009457',
+  almoxarifado: '16993207815',  // Marcos
+  compras:      '3492677671',   // Jeferson
+  nestle:       '16988188987',  // Arnaldo acompanha junto à Nestlé
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
-const DEADLINE = '2026-05-27'; // Quarta-feira
+const VALIDATORS = [
+  { name: 'Antônio', phone: '16999688354' },
+  { name: 'Ronaldo', phone: '16981735919' },
+];
+
+const DEADLINE = '2026-05-28';
 
 const pendencies = [
   { id:1,  title: 'Identificar quadro elétrico com carômetro',           description: 'Foto do eletricista responsável da empresa comprovando identificação',          responsible_name: 'Gaspar',       responsible_phone: PHONES.gaspar,       priority: 'alta' },
@@ -61,6 +63,11 @@ const insertMany = db.transaction((items) => {
 
 insertMany(pendencies);
 
+// Insere/atualiza validadores
+db.prepare('INSERT OR REPLACE INTO bot_config (key, value) VALUES ("validators", ?)').run(
+  JSON.stringify(VALIDATORS)
+);
+
 const count = db.prepare("SELECT COUNT(*) as c FROM pendencies WHERE status='pendente'").get();
-console.log(`\n✅ ${count.c} pendências inseridas com prazo ${DEADLINE}\n`);
-console.log('⚠️  Lembre-se de atualizar os números de telefone no arquivo seed.js ou pelo dashboard!\n');
+console.log(`\n✅ ${count.c} pendências inseridas com prazo ${DEADLINE}`);
+console.log(`✅ Validadores configurados: ${VALIDATORS.map(v => v.name).join(', ')}\n`);

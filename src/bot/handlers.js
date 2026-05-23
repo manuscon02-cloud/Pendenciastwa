@@ -31,10 +31,17 @@ async function handleMessage(msg) {
 
   if (!msg.from.includes('@g.us')) return;
 
+  // Só responde no grupo configurado (se houver um configurado)
+  const groupCfg = db.prepare('SELECT value FROM bot_config WHERE key = "group_id"').get();
+  if (groupCfg && msg.from !== groupCfg.value) return;
+
   const senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
   if (!senderPhone) return;
 
   const body = (msg.body || '').trim().toLowerCase();
+
+  // Ignora mensagens que não começam com #
+  if (!body.startsWith('#')) return;
 
   // ── #feito [id] + foto ────────────────────────────────────────────────────
   if (body.startsWith('#feito')) {
