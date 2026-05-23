@@ -1,0 +1,9 @@
+node_modules/
+.env
+wwebjs_auth/
+data/
+public/uploads/*
+!public/uploads/.gitkeep
+*.db
+*.db-wal
+*.db-shm

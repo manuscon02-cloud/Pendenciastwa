@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pendências – Obra Montes Claros</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+    --border: #475569; --text: #f1f5f9; --muted: #94a3b8;
+    --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+    --blue: #3b82f6; --accent: #6366f1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+  
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  header h1 { font-size: 1.1rem; font-weight: 700; }
+  header p  { font-size: .75rem; color: var(--muted); }
+  .badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .75rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .badge-green  { background: #14532d; color: var(--green); }
+  .badge-red    { background: #450a0a; color: var(--red); }
+  .badge-yellow { background: #422006; color: var(--yellow); }
+
+  nav { display: flex; gap: .25rem; padding: .75rem 1.5rem; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  nav button { padding: .5rem 1.1rem; border-radius: 8px; border: none; cursor: pointer; font-size: .85rem; font-weight: 500; white-space: nowrap; background: transparent; color: var(--muted); transition: all .15s; }
+  nav button.active { background: var(--accent); color: #fff; }
+  nav button:hover:not(.active) { background: var(--surface2); color: var(--text); }
+
+  main { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-size: .9rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: 1.5rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+  .stat .num { font-size: 2rem; font-weight: 800; }
+  .stat .lbl { font-size: .75rem; color: var(--muted); margin-top: .2rem; }
+
+  .pend-list { display: flex; flex-direction: column; gap: .75rem; }
+  .pend-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+  .pend-item.alta   { border-left: 4px solid var(--red); }
+  .pend-item.media  { border-left: 4px solid var(--yellow); }
+  .pend-item.baixa  { border-left: 4px solid var(--green); }
+  .pend-item.concluida { opacity: .55; border-left-color: var(--border); }
+  .pend-header { display: flex; align-items: flex-start; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+  .pend-id   { font-size: .7rem; color: var(--accent); font-weight: 700; margin-bottom: .2rem; }
+  .pend-title { font-weight: 700; font-size: .95rem; }
+  .pend-desc  { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
+  .pend-meta  { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+  .pend-meta span { font-size: .75rem; background: var(--surface2); padding: .2rem .6rem; border-radius: 6px; }
+  .pend-actions { display: flex; gap: .4rem; margin-top: .75rem; flex-wrap: wrap; }
+
+  .btn { padding: .45rem .9rem; border-radius: 8px; border: none; cursor: pointer; font-size: .8rem; font-weight: 600; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-green   { background: #14532d; color: var(--green); }
+  .btn-red     { background: #450a0a; color: var(--red); }
+  .btn-ghost   { background: var(--surface2); color: var(--text); }
+  .btn-lg { padding: .7rem 1.4rem; font-size: .9rem; }
+  .btn-full { width: 100%; justify-content: center; display: flex; }
+
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; }
+
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: .8rem; font-weight: 600; color: var(--muted); margin-bottom: .35rem; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: .6rem .85rem; color: var(--text); font-size: .9rem; outline: none;
+    transition: border-color .15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+  .qr-wrap { text-align: center; padding: 1.5rem; }
+  .qr-wrap img { max-width: 240px; border-radius: 12px; background: #fff; padding: 8px; }
+  .qr-wrap p { color: var(--muted); font-size: .85rem; margin-top: .75rem; }
+
+  .schedule-item { display: flex; align-items: center; justify-content: space-between; padding: .65rem; background: var(--surface2); border-radius: 8px; margin-bottom: .5rem; }
+
+  .group-item { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; background: var(--surface2); border-radius: 10px; margin-bottom: .5rem; cursor: pointer; transition: background .15s; }
+  .group-item:hover { background: var(--border); }
+  .group-item.selected { border: 2px solid var(--accent); }
+
+  .proof-link { font-size: .75rem; color: var(--blue); text-decoration: underline; cursor: pointer; }
+
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .75rem 1.25rem; font-size: .875rem; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,.4); animation: fadeIn .2s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: var(--green); }
+  .dot-red   { background: var(--red); }
+  .dot-yellow { background: var(--yellow); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+  .empty span { font-size: 2.5rem; display: block; margin-bottom: .75rem; }
+
+  @media(max-width:480px) { .stats { grid-template-columns: repeat(3,1fr); } .form-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body x-data="app()" x-init="init()">
+
+<!-- Toast -->
+<div x-show="toast.show" x-transition class="toast" x-text="toast.msg"></div>
+
+<!-- Modal: Nova/Editar Pendência -->
+<div x-show="modal.show" class="modal-bg" @click.self="modal.show = false">
+  <div class="modal">
+    <h2 x-text="modal.editing ? '✏️ Editar Pendência' : '➕ Nova Pendência'"></h2>
+    <div class="form-group">
+      <label>Título da Pendência *</label>
+      <input type="text" x-model="form.title" placeholder="Ex: Aprovação do laudo elétrico" />
+    </div>
+    <div class="form-group">
+      <label>Descrição (opcional)</label>
+      <textarea x-model="form.description" rows="2" placeholder="Detalhes adicionais..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Responsável *</label>
+        <input type="text" x-model="form.responsible_name" placeholder="Nome do funcionário" />
+      </div>
+      <div class="form-group">
+        <label>Prioridade</label>
+        <select x-model="form.priority">
+          <option value="alta">🔴 Alta</option>
+          <option value="media">🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>WhatsApp (com DDD) *</label>
+        <input type="tel" x-model="form.responsible_phone" placeholder="31999999999" />
+      </div>
+      <div class="form-group">
+        <label>Prazo *</label>
+        <input type="date" x-model="form.deadline" />
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top:.5rem">
+      <button class="btn btn-ghost" style="flex:1" @click="modal.show = false">Cancelar</button>
+      <button class="btn btn-primary" style="flex:2" @click="savePendency()">
+        <span x-text="modal.editing ? 'Salvar alterações' : 'Criar pendência'"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div>
+    <h1>🏗️ Pendências – Obra</h1>
+    <p>Montes Claros · Prazo: Quarta-feira</p>
+  </div>
+  <div class="badge" :class="status.whatsapp ? 'badge-green' : 'badge-red'">
+    <span class="dot" :class="status.whatsapp ? 'dot-green' : 'dot-red'"></span>
+    <span x-text="status.whatsapp ? 'WhatsApp OK' : 'Desconectado'"></span>
+  </div>
+</header>
+
+<!-- Nav -->
+<nav>
+  <button :class="tab === 'dash' && 'active'" @click="tab='dash'">📊 Dashboard</button>
+  <button :class="tab === 'pend' && 'active'" @click="tab='pend'; loadPendencies()">📋 Pendências</button>
+  <button :class="tab === 'review' && 'active'" @click="tab='review'; loadReview()">🟠 Em Validação <span x-show="status.stats?.aguardando > 0" x-text="'(' + status.stats.aguardando + ')'" style="color:var(--yellow)"></span></button>
+  <button :class="tab === 'done' && 'active'" @click="tab='done'; loadDone()">✅ Concluídas</button>
+  <button :class="tab === 'config' && 'active'" @click="tab='config'; loadConfig()">⚙️ Configurações</button>
+</nav>
+
+<main>
+
+  <!-- ── DASHBOARD ──────────────────────────────────────────── -->
+  <div x-show="tab === 'dash'">
+    <div class="stats">
+      <div class="stat">
+        <div class="num" style="color:var(--red)" x-text="status.stats?.pendente ?? 0"></div>
+        <div class="lbl">Pendentes</div>
+      </div>
+      <div class="stat">
+        <div class="num" style="color:var(--yellow)" x-text="status.stats?.aguardando ?? 0"></div>
+        <div class="lbl">Em Validação</div>
+      </div>
+      <div class="stat">
+        <div class="num" style="color:var(--green)" x-text="status.stats?.concluida ?? 0"></div>
+        <div class="lbl">Concluídas</div>
+      </div>
+    </div>
+
+    <!-- WhatsApp Status -->
+    <div class="card" x-show="!status.whatsapp">
+      <div class="card-title">📱 Conexão WhatsApp</div>
+      <template x-if="qr">
+        <div class="qr-wrap">
+          <p style="margin-bottom:.75rem;color:var(--text);font-weight:600">Escaneie com seu WhatsApp:</p>
+          <img :src="qr" alt="QR Code" />
+          <p>Abra o WhatsApp → <strong>Dispositivos Conectados</strong> → Conectar dispositivo</p>
+        </div>
+      </template>
+      <template x-if="!qr">
+        <div class="qr-wrap">
+          <span style="font-size:2rem">⏳</span>
+          <p style="margin-top:.5rem">Gerando QR code... aguarde alguns segundos.</p>
+          <button class="btn btn-ghost" style="margin-top:1rem" @click="loadQR()">🔄 Atualizar</button>
+        </div>
+      </template>
+    </div>
+
+    <div class="card" x-show="status.whatsapp">
+      <div class="card-title">📱 WhatsApp</div>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:2rem">✅</span>
+        <div>
+          <div style="font-weight:700">Conectado!</div>
+          <div style="font-size:.8rem;color:var(--muted)" x-text="status.group_name ? '📍 Grupo: ' + status.group_name : '⚠️ Nenhum grupo selecionado — vá em Configurações'"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ações rápidas -->
+    <div class="card">
+      <div class="card-title">⚡ Ações Rápidas</div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+        <button class="btn btn-primary" @click="openNewModal()">➕ Nova pendência</button>
+        <button class="btn btn-green" @click="triggerNow()" :disabled="!status.whatsapp">
+          📨 Cobrar agora
+        </button>
+        <button class="btn btn-ghost" @click="loadStatus()">🔄 Atualizar</button>
+      </div>
+    </div>
+
+    <!-- Top pendências -->
+    <div class="card">
+      <div class="card-title">🔴 Alta Prioridade</div>
+      <template x-if="highPriority.length === 0">
+        <div class="empty"><span>🎉</span>Nenhuma pendência de alta prioridade!</div>
+      </template>
+      <div class="pend-list">
+        <template x-for="p in highPriority" :key="p.id">
+          <div class="pend-item" :class="p.priority">
+            <div class="pend-id" x-text="'#' + p.id"></div>
+            <div class="pend-title" x-text="p.title"></div>
+            <div class="pend-meta">
+              <span x-text="'👤 ' + p.responsible_name"></span>
+              <span x-text="'📅 ' + fmtDate(p.deadline)"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PENDÊNCIAS ────────────────────────────────────────── -->
+  <div x-show="tab === 'pend'">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <span style="font-weight:700" x-text="pendencies.length + ' pendência(s)'"></span>
+      <button class="btn btn-primary" @click="openNewModal()">➕ Nova</button>
+    </div>
+
+    <template x-if="pendencies.length === 0">
+      <div class="empty"><span>✅</span>Sem pendências em aberto!</div>
+    </template>
+
+    <div class="pend-list">
+      <template x-for="p in pendencies" :key="p.id">
+        <div class="pend-item" :class="p.priority">
+          <div class="pend-header">
+            <div>
+              <div class="pend-id" x-text="'Pendência #' + p.id"></div>
+              <div class="pend-title" x-text="p.title"></div>
+              <div class="pend-desc" x-show="p.description" x-text="p.description"></div>
+            </div>
+            <div class="badge" :class="p.priority === 'alta' ? 'badge-red' : p.priority === 'media' ? 'badge-yellow' : 'badge-green'"
+              x-text="p.priority === 'alta' ? '🔴 Alta' : p.priority === 'media' ? '🟡 Média' : '🟢 Baixa'">
+            </div>
+          </div>
+          <div class="pend-meta">
+            <span x-text="'👤 ' + p.responsible_name"></span>
+            <span x-text="'📱 ' + p.responsible_phone"></span>
+            <span x-text="'📅 ' + fmtDate(p.deadline)"></span>
+            <template x-if="p.last_reminded_at">
+              <span x-text="'📨 Cobrado: ' + fmtDatetime(p.last_reminded_at)"></span>
+            </template>
+          </div>
+          <div class="pend-actions">
+            <button class="btn btn-ghost" @click="openEditModal(p)">✏️ Editar</button>
+            <button class="btn btn-green" @click="markDone(p.id)">✅ Concluir manual</button>
+            <button class="btn btn-red" @click="deletePendency(p.id)">🗑️ Excluir</button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ── EM VALIDAÇÃO ─────────────────────────────────────────────────── -->
+  <div x-show="tab === 'review'">
+    <div style="margin-bottom:1rem;font-size:.85rem;color:var(--muted)">
+      Comprovantes recebidos — aguardando aprovação dos validadores.
+    </div>
+    <template x-if="review.length === 0">
+      <div class="empty"><span>🟠</span>Nenhum item aguardando validação.</div>
+    </template>
+    <div class="pend-list">
+      <template x-for="p in review" :key="p.id">
+        <div class="pend-item" style="border-left:4px solid var(--yellow)">
+          <div class="pend-id" x-text="'Pendência #' + p.id"></div>
+          <div class="pend-title" x-text="p.title"></div>
+          <div class="pend-meta">
+            <span x-text="'👤 ' + p.responsible_name"></span>
+            <span style="background:#422006;color:var(--yellow)">⏳ Aguardando validação</span>
+          </div>
+          <template x-if="p.proof_path">
+            <div style="margin-top:.5rem">
+              <a :href="p.proof_path" target="_blank" class="proof-link">📎 Ver comprovante</a>
+            </div>
+          </template>
+          <div class="pend-actions">
+            <button class="btn btn-green" @click="manualValidate(p.id)">✅ Validar</button>
+            <button class="btn btn-red" @click="manualReject(p.id)">❌ Rejeitar</button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ── CONCLUÍDAS ────────────────────────────────────────── -->
+  <div x-show="tab === 'done'">
+    <template x-if="done.length === 0">
+      <div class="empty"><span>📭</span>Nenhuma pendência concluída ainda.</div>
+    </template>
+    <div class="pend-list">
+      <template x-for="p in done" :key="p.id">
+        <div class="pend-item concluida">
+          <div class="pend-id" x-text="'#' + p.id"></div>
+          <div class="pend-title" x-text="p.title"></div>
+          <div class="pend-meta">
+            <span x-text="'👤 ' + p.responsible_name"></span>
+            <span x-text="'✅ ' + fmtDatetime(p.completed_at)"></span>
+          </div>
+          <template x-if="p.proof_path">
+            <div style="margin-top:.5rem">
+              <a :href="p.proof_path" target="_blank" class="proof-link">📎 Ver comprovante</a>
+            </div>
+          </template>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- ── CONFIGURAÇÕES ─────────────────────────────────────── -->
+  <div x-show="tab === 'config'">
+
+    <!-- Validadores -->
+    <div class="card">
+      <div class="card-title">🔐 Validadores (Antônio / Ronaldo)</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
+        Apenas essas pessoas podem aprovar comprovantes com <code style="background:var(--surface2);padding:.1rem .4rem;border-radius:4px">#validar</code> ou rejeitar com <code style="background:var(--surface2);padding:.1rem .4rem;border-radius:4px">#rejeitar</code>.
+      </p>
+      <template x-for="v in validators" :key="v.phone">
+        <div class="schedule-item">
+          <div>
+            <div style="font-weight:700" x-text="v.name"></div>
+            <div style="font-size:.75rem;color:var(--muted)" x-text="v.phone"></div>
+          </div>
+          <button class="btn btn-red" @click="removeValidator(v.phone)">🗑️</button>
+        </div>
+      </template>
+      <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap">
+        <input type="text" x-model="newValidator.name" placeholder="Nome (ex: Antônio)"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem;border-radius:8px;font-size:.85rem;flex:1;min-width:120px" />
+        <input type="tel" x-model="newValidator.phone" placeholder="Número (ex: 31999990001)"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem;border-radius:8px;font-size:.85rem;flex:1;min-width:140px" />
+        <button class="btn btn-primary" @click="addValidator()">+ Adicionar</button>
+      </div>
+    </div>
+
+    <!-- Grupo WhatsApp -->
+    <div class="card">
+      <div class="card-title">📱 Grupo WhatsApp</div>
+      <template x-if="!status.whatsapp">
+        <p style="color:var(--muted);font-size:.85rem">Conecte o WhatsApp primeiro.</p>
+      </template>
+      <template x-if="status.whatsapp">
+        <div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">
+            Selecione o grupo da obra:
+          </p>
+          <template x-if="groups.length === 0">
+            <div>
+              <p style="color:var(--muted);font-size:.85rem">Nenhum grupo encontrado.</p>
+              <button class="btn btn-ghost" style="margin-top:.75rem" @click="loadGroups()">🔄 Buscar grupos</button>
+            </div>
+          </template>
+          <template x-for="g in groups" :key="g.id">
+            <div class="group-item" :class="status.group_id === g.id && 'selected'" @click="selectGroup(g)">
+              <div>
+                <div style="font-weight:600" x-text="g.name"></div>
+                <div style="font-size:.75rem;color:var(--muted)" x-text="g.participants + ' participantes'"></div>
+              </div>
+              <span x-show="status.group_id === g.id" style="color:var(--green);font-size:.85rem">✅ Selecionado</span>
+            </div>
+          </template>
+          <button class="btn btn-ghost" style="margin-top:.5rem" @click="loadGroups()">🔄 Atualizar lista</button>
+        </div>
+      </template>
+    </div>
+
+    <!-- Horários de cobrança -->
+    <div class="card">
+      <div class="card-title">⏰ Horários de Cobrança</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
+        O bot envia cobranças automaticamente nos horários abaixo (seg–sáb, fuso SP):
+      </p>
+      <template x-for="s in schedules" :key="s.id">
+        <div class="schedule-item">
+          <span style="font-weight:700;font-size:1.05rem"
+            x-text="String(s.hour).padStart(2,'0') + ':' + String(s.minute).padStart(2,'0')"></span>
+          <button class="btn btn-red" @click="deleteSchedule(s.id)">🗑️</button>
+        </div>
+      </template>
+      <div style="display:flex;gap:.5rem;margin-top:.75rem;align-items:center">
+        <input type="time" x-model="newTime" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem;border-radius:8px;font-size:.9rem;" />
+        <button class="btn btn-primary" @click="addSchedule()">+ Adicionar</button>
+      </div>
+    </div>
+
+    <!-- Instruções -->
+    <div class="card">
+      <div class="card-title">📖 Como os funcionários respondem</div>
+      <div style="font-size:.85rem;line-height:1.7;color:var(--muted)">
+        <p>Quando o bot enviar a cobrança no grupo, cada responsável deve:</p>
+        <br>
+        <p><strong style="color:var(--text)">1.</strong> Tirar uma foto do que foi feito (comprovante)</p>
+        <p><strong style="color:var(--text)">2.</strong> Enviar a foto no grupo com a legenda:</p>
+        <p style="background:var(--surface2);padding:.5rem .75rem;border-radius:8px;margin:.5rem 0;color:var(--text);font-family:monospace">#feito [número da pendência]</p>
+        <p>Exemplo: enviar foto com legenda <code style="background:var(--surface2);padding:.1rem .4rem;border-radius:4px">#feito 3</code></p>
+        <br>
+        <p><strong style="color:var(--text)">Outros comandos:</strong></p>
+        <p><code style="background:var(--surface2);padding:.1rem .4rem;border-radius:4px">#status</code> — ver todas as pendências abertas</p>
+        <p><code style="background:var(--surface2);padding:.1rem .4rem;border-radius:4px">#ajuda</code> — ver comandos disponíveis</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+function app() {
+  return {
+    tab: 'dash',
+    status: { whatsapp: false, stats: { pendente: 0, aguardando: 0, concluida: 0 }, group_name: null },
+    qr: null,
+    pendencies: [],
+    review: [],
+    done: [],
+    highPriority: [],
+    groups: [],
+    schedules: [],
+    validators: [],
+    newValidator: { name: '', phone: '' },
+    newTime: '09:00',
+    toast: { show: false, msg: '' },
+    modal: { show: false, editing: false, id: null },
+    form: { title: '', description: '', responsible_name: '', responsible_phone: '', deadline: '', priority: 'media' },
+
+    async init() {
+      await this.loadStatus();
+      await this.loadQR();
+      await this.loadPendencies();
+      setInterval(() => this.loadStatus(), 8000);
+      setInterval(() => { if (!this.status.whatsapp) this.loadQR(); }, 5000);
+    },
+
+    async loadStatus() {
+      try {
+        const r = await fetch('/api/status');
+        this.status = await r.json();
+        this.highPriority = this.pendencies.filter(p => p.priority === 'alta' && p.status === 'pendente');
+      } catch (e) {}
+    },
+
+    async loadQR() {
+      try {
+        const r = await fetch('/api/qr');
+        const d = await r.json();
+        this.qr = d.qr || null;
+      } catch (e) {}
+    },
+
+    async loadPendencies() {
+      const r = await fetch('/api/pendencies?status=pendente');
+      this.pendencies = await r.json();
+      this.highPriority = this.pendencies.filter(p => p.priority === 'alta');
+    },
+
+    async loadDone() {
+      const r = await fetch('/api/pendencies?status=concluida');
+      this.done = await r.json();
+    },
+
+    async loadConfig() {
+      await this.loadSchedules();
+      await this.loadValidators();
+      if (this.status.whatsapp) await this.loadGroups();
+    },
+
+    async loadReview() {
+      const r = await fetch('/api/pendencies?status=aguardando_validacao');
+      this.review = await r.json();
+    },
+
+    async loadValidators() {
+      const r = await fetch('/api/validators');
+      this.validators = await r.json();
+    },
+
+    async addValidator() {
+      if (!this.newValidator.name || !this.newValidator.phone) {
+        this.showToast('⚠️ Preencha nome e número'); return;
+      }
+      const r = await fetch('/api/validators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.newValidator)
+      });
+      this.validators = await r.json();
+      this.newValidator = { name: '', phone: '' };
+      this.showToast('✅ Validador adicionado!');
+    },
+
+    async removeValidator(phone) {
+      const r = await fetch(`/api/validators/${phone}`, { method: 'DELETE' });
+      this.validators = await r.json();
+      this.showToast('🗑️ Validador removido');
+    },
+
+    async manualValidate(id) {
+      if (!confirm(`Validar pendência #${id} manualmente?`)) return;
+      await fetch(`/api/pendencies/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'concluida' })
+      });
+      await this.loadReview();
+      await this.loadStatus();
+      this.showToast('✅ Pendência validada e concluída!');
+    },
+
+    async manualReject(id) {
+      if (!confirm(`Rejeitar comprovante da pendência #${id} e devolver para pendente?`)) return;
+      await fetch(`/api/pendencies/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'pendente', proof_path: null })
+      });
+      await this.loadReview();
+      await this.loadStatus();
+      this.showToast('❌ Comprovante rejeitado');
+    },
+
+    async loadSchedules() {
+      const r = await fetch('/api/schedules');
+      this.schedules = await r.json();
+    },
+
+    async loadGroups() {
+      const r = await fetch('/api/groups');
+      this.groups = await r.json();
+    },
+
+    async selectGroup(g) {
+      await fetch('/api/groups/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groupId: g.id, groupName: g.name })
+      });
+      await this.loadStatus();
+      this.showToast(`✅ Grupo "${g.name}" selecionado!`);
+    },
+
+    openNewModal() {
+      this.modal = { show: true, editing: false, id: null };
+      this.form = { title: '', description: '', responsible_name: '', responsible_phone: '', deadline: '', priority: 'media' };
+    },
+
+    openEditModal(p) {
+      this.modal = { show: true, editing: true, id: p.id };
+      this.form = { title: p.title, description: p.description, responsible_name: p.responsible_name, responsible_phone: p.responsible_phone, deadline: p.deadline?.slice(0, 10), priority: p.priority };
+    },
+
+    async savePendency() {
+      if (!this.form.title || !this.form.responsible_name || !this.form.responsible_phone || !this.form.deadline) {
+        this.showToast('⚠️ Preencha todos os campos obrigatórios'); return;
+      }
+      const url    = this.modal.editing ? `/api/pendencies/${this.modal.id}` : '/api/pendencies';
+      const method = this.modal.editing ? 'PUT' : 'POST';
+      await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+      this.modal.show = false;
+      await this.loadPendencies();
+      await this.loadStatus();
+      this.showToast(this.modal.editing ? '✏️ Pendência atualizada!' : '✅ Pendência criada!');
+    },
+
+    async deletePendency(id) {
+      if (!confirm(`Excluir pendência #${id}?`)) return;
+      await fetch(`/api/pendencies/${id}`, { method: 'DELETE' });
+      await this.loadPendencies();
+      await this.loadStatus();
+      this.showToast('🗑️ Pendência excluída');
+    },
+
+    async markDone(id) {
+      if (!confirm(`Marcar pendência #${id} como concluída manualmente?`)) return;
+      await fetch(`/api/pendencies/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'concluida' })
+      });
+      await this.loadPendencies();
+      await this.loadStatus();
+      this.showToast('✅ Pendência concluída!');
+    },
+
+    async triggerNow() {
+      this.showToast('📨 Enviando cobrança...');
+      const r = await fetch('/api/trigger', { method: 'POST' });
+      const d = await r.json();
+      this.showToast(d.error ? '❌ ' + d.error : '✅ Cobrança enviada!');
+    },
+
+    async addSchedule() {
+      if (!this.newTime) return;
+      const [hour, minute] = this.newTime.split(':').map(Number);
+      await fetch('/api/schedules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hour, minute })
+      });
+      await this.loadSchedules();
+      this.showToast(`📅 Horário ${this.newTime} adicionado!`);
+    },
+
+    async deleteSchedule(id) {
+      await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+      await this.loadSchedules();
+      this.showToast('🗑️ Horário removido');
+    },
+
+    fmtDate(d) {
+      if (!d) return '–';
+      return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+    },
+    fmtDatetime(d) {
+      if (!d) return '–';
+      return new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    },
+
+    showToast(msg) {
+      this.toast = { show: true, msg };
+      setTimeout(() => this.toast.show = false, 3500);
+    }
+  };
+}
+</script>
+</body>
+</html>

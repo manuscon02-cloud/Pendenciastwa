@@ -1,0 +1,35 @@
+[phases.setup]
+nixPkgs = [
+  "nodejs_20",
+  "google-chrome",
+  "chromium",
+  "nss",
+  "cups",
+  "libdrm",
+  "atk",
+  "at-spi2-atk",
+  "gtk3",
+  "xorg.libxkbcommon",
+  "xorg.libXcomposite",
+  "xorg.libXdamage",
+  "xorg.libXext",
+  "xorg.libXfixes",
+  "xorg.libXrandr",
+  "mesa",
+  "expat",
+  "xorg.libxcb"
+]
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "node src/index.js"
+
+[variables]
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+PUPPETEER_EXECUTABLE_PATH = "/run/current-system/sw/bin/chromium"
+TZ = "America/Sao_Paulo"
