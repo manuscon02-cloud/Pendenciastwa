@@ -9,7 +9,7 @@ nixPkgs = [
   "atk",
   "at-spi2-atk",
   "gtk3",
-  "xorg.libxkbcommon",
+  "libxkbcommon",
   "xorg.libXcomposite",
   "xorg.libXdamage",
   "xorg.libXext",
