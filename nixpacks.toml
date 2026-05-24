@@ -1,6 +1,7 @@
 [phases.setup]
 nixPkgs = [
   "nodejs_20",
+  "chromium",
   "nss",
   "cups",
   "libdrm",
@@ -17,20 +18,6 @@ nixPkgs = [
   "expat",
   "xorg.libxcb"
 ]
-aptPkgs = [
-  "chromium",
-  "libnss3",
-  "libatk1.0-0",
-  "libatk-bridge2.0-0",
-  "libcups2",
-  "libgbm1",
-  "libasound2t64",
-  "libpangocairo-1.0-0",
-  "libxss1",
-  "libgtk-3-0",
-  "libxshmfence1",
-  "libglu1-mesa"
-]
 
 [phases.install]
 cmds = ["npm install"]
@@ -43,5 +30,4 @@ cmd = "node src/index.js"
 
 [variables]
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
-PUPPETEER_EXECUTABLE_PATH = "/usr/bin/chromium"
 TZ = "America/Sao_Paulo"

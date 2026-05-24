@@ -1,6 +1,34 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const path = require('path');
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+function findChromium() {
+  const env = process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (env && fs.existsSync(env)) return env;
+
+  const candidates = [
+    '/root/.nix-profile/bin/chromium',
+    '/nix/var/nix/profiles/default/bin/chromium',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+
+  for (const name of ['chromium', 'chromium-browser', 'google-chrome']) {
+    try {
+      const p = execSync(`which ${name} 2>/dev/null`, { timeout: 3000 }).toString().trim();
+      if (p && fs.existsSync(p)) return p;
+    } catch {}
+  }
+
+  return undefined;
+}
 
 let client;
 let qrCodeData = null;
@@ -11,6 +39,9 @@ function getQRCode()     { return qrCodeData; }
 function isClientReady() { return isReady; }
 
 async function initWhatsApp(messageHandler) {
+  const chromiumPath = findChromium();
+  console.log(`🌐 Chromium: ${chromiumPath || 'auto-detect pelo puppeteer'}`);
+
   client = new Client({
     authStrategy: new LocalAuth({
       dataPath: process.env.WWEBJS_AUTH_PATH || path.join(__dirname, '../../wwebjs_auth')
@@ -26,7 +57,7 @@ async function initWhatsApp(messageHandler) {
         '--no-zygote',
         '--disable-gpu'
       ],
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+      executablePath: chromiumPath
     }
   });
 
