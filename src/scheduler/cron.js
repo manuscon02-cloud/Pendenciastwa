@@ -105,10 +105,14 @@ async function sendReminders() {
   }
 
   const concluidas = db.prepare("SELECT COUNT(*) as c FROM pendencies WHERE status = 'concluida'").get().c;
-  const { text, mentions } = buildMessage(pendencies, concluidas);
+  const result = buildMessage(pendencies, concluidas);
+  const msgText  = result.text;
+  const mentions = result.mentions;
+
+  console.log(`🔍 Mensagem: ${msgText.length} chars, ${mentions.length} menções`);
 
   try {
-    await sendMessage(cfg.value, text, mentions);
+    await sendMessage(cfg.value, msgText, mentions);
     const now = new Date().toISOString();
     const logStmt    = db.prepare('INSERT INTO reminder_logs (pendency_id, sent_at) VALUES (?, ?)');
     const updateStmt = db.prepare('UPDATE pendencies SET last_reminded_at = ? WHERE id = ?');
