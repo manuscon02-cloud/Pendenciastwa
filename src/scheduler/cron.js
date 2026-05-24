@@ -111,7 +111,7 @@ function initScheduler() {
   const schedules = db.prepare('SELECT * FROM schedules WHERE active = 1').all();
 
   schedules.forEach(s => {
-    const expr = `${s.minute} ${s.hour} * * 1-6`;
+    const expr = `${s.minute} ${s.hour} * * *`;
     const job = cron.schedule(expr, async () => {
       console.log(`🕐 Executando cobrança: ${s.hour}:${String(s.minute).padStart(2, '0')}`);
       await sendReminders();
