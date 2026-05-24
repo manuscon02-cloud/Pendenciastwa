@@ -95,9 +95,9 @@ async function initWhatsApp(messageHandler) {
   return client;
 }
 
-async function sendMessage(to, text) {
+async function sendMessage(to, text, mentions = []) {
   if (!isReady || !client) throw new Error('WhatsApp não conectado');
-  return client.sendMessage(to, text);
+  return client.sendMessage(to, text, { mentions });
 }
 
 async function getGroups() {

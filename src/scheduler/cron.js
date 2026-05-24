@@ -6,6 +6,13 @@ let jobs = [];
 
 const HEADER = '🤖 *AGENTE DE OBRAS TWA*\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 
+// Converte phone do banco (ex: 16997868778) para ID WhatsApp (5516997868778@c.us)
+function toWaId(phone) {
+  const n = phone.replace(/\D/g, '');
+  const cc = n.startsWith('55') ? n : '55' + n;
+  return `${cc}@c.us`;
+}
+
 function buildMessage(pendencies, concluidas) {
   const now = new Date();
   const tz = { timeZone: 'America/Sao_Paulo' };
@@ -16,39 +23,52 @@ function buildMessage(pendencies, concluidas) {
   const hora = now.toLocaleTimeString('pt-BR', { ...tz, hour: '2-digit', minute: '2-digit' });
 
   const sep = '━'.repeat(25);
+  const mentions = [];
 
-  let msg = HEADER;
-  msg += `🏗️ *CHECKLIST – NESTLÉ MONTES CLAROS*\n`;
-  msg += `🗓️ ${diaSemana} ${data}  |  ⏰ ${hora}\n`;
-  msg += `${sep}\n\n`;
+  const mentionTag = (phone) => {
+    const id = toWaId(phone);
+    if (!mentions.includes(id)) mentions.push(id);
+    return `@${id.replace('@c.us', '')}`;
+  };
+
+  const formatBloco = (items) => {
+    let s = '';
+    for (const p of items) {
+      s += `◻️ *#${p.id}* ${p.title}\n`;
+      s += `   👤 ${mentionTag(p.responsible_phone)}\n\n`;
+    }
+    return s;
+  };
 
   const alta  = pendencies.filter(p => p.priority === 'alta');
   const media = pendencies.filter(p => p.priority === 'media');
   const baixa = pendencies.filter(p => p.priority === 'baixa');
 
+  let text = HEADER;
+  text += `🏗️ *CHECKLIST – NESTLÉ MONTES CLAROS*\n`;
+  text += `🗓️ ${diaSemana} ${data}  |  ⏰ ${hora}\n`;
+  text += `${sep}\n\n`;
+
   if (alta.length > 0) {
-    msg += `🔴 *CRÍTICO – resolver hoje*\n`;
-    alta.forEach(p => { msg += `◻️ *#${p.id}*  ${p.title} → ${p.responsible_name}\n`; });
-    msg += '\n';
+    text += `🔴 *CRÍTICO – resolver hoje*\n\n`;
+    text += formatBloco(alta);
   }
 
   if (media.length > 0) {
-    msg += `🟡 *IMPORTANTE*\n`;
-    media.forEach(p => { msg += `◻️ *#${p.id}*  ${p.title} → ${p.responsible_name}\n`; });
-    msg += '\n';
+    text += `🟡 *IMPORTANTE*\n\n`;
+    text += formatBloco(media);
   }
 
   if (baixa.length > 0) {
-    msg += `🟢 *PROGRAMADO*\n`;
-    baixa.forEach(p => { msg += `◻️ *#${p.id}*  ${p.title} → ${p.responsible_name}\n`; });
-    msg += '\n';
+    text += `🟢 *PROGRAMADO*\n\n`;
+    text += formatBloco(baixa);
   }
 
-  msg += `${sep}\n`;
-  msg += `✅ ${concluidas} concluída(s)  |  🔴 ${pendencies.length} aberta(s)\n`;
-  msg += `📸 Envie foto com *#feito [nº]* para registrar conclusão`;
+  text += `${sep}\n`;
+  text += `✅ ${concluidas} concluída(s)  |  🔴 ${pendencies.length} aberta(s)\n`;
+  text += `📸 Envie foto com *#feito [nº]* para registrar conclusão`;
 
-  return msg;
+  return { text, mentions };
 }
 
 async function sendReminders() {
@@ -85,9 +105,10 @@ async function sendReminders() {
   }
 
   const concluidas = db.prepare("SELECT COUNT(*) as c FROM pendencies WHERE status = 'concluida'").get().c;
+  const { text, mentions } = buildMessage(pendencies, concluidas);
 
   try {
-    await sendMessage(cfg.value, buildMessage(pendencies, concluidas));
+    await sendMessage(cfg.value, text, mentions);
     const now = new Date().toISOString();
     const logStmt    = db.prepare('INSERT INTO reminder_logs (pendency_id, sent_at) VALUES (?, ?)');
     const updateStmt = db.prepare('UPDATE pendencies SET last_reminded_at = ? WHERE id = ?');
@@ -97,7 +118,7 @@ async function sendReminders() {
       updateStmt.run(now, p.id);
     });
 
-    console.log(`📨 Cobrança enviada: ${pendencies.length} pendência(s)`);
+    console.log(`📨 Cobrança enviada: ${pendencies.length} pendência(s), ${mentions.length} @menção(ões)`);
   } catch (err) {
     console.error('❌ Erro ao enviar cobrança:', err.message);
   }
@@ -118,7 +139,7 @@ function initScheduler() {
     }, { timezone: 'America/Sao_Paulo' });
 
     jobs.push(job);
-    console.log(`📅 Agendado: ${s.hour}:${String(s.minute).padStart(2, '0')} (seg-sáb)`);
+    console.log(`📅 Agendado: ${s.hour}:${String(s.minute).padStart(2, '0')} (todos os dias)`);
   });
 
   console.log(`✅ ${schedules.length} horário(s) agendado(s)`);
