@@ -43,7 +43,13 @@ async function handleMessage(msg) {
   const groupCfg = db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get();
   if (groupCfg && msg.from !== groupCfg.value) return;
 
-  const senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
+  let senderPhone;
+  if (msg.author && msg.author.includes('@lid')) {
+    const contact = await msg.getContact();
+    senderPhone = contact.number || null;
+  } else {
+    senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
+  }
   if (!senderPhone) return;
 
   const rawBody = (msg.body || '').trim();
