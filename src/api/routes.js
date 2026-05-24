@@ -71,6 +71,25 @@ router.delete('/validators/:phone', (req, res) => {
   res.json(list);
 });
 
+// ── MAPA LID→TELEFONE ────────────────────────────────────────────────────────
+router.get('/lid-map', (req, res) => {
+  const db = getDB();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'lid_phone_map'").get();
+  try { res.json(JSON.parse(row?.value || '{}')); } catch { res.json({}); }
+});
+
+router.post('/lid-map', (req, res) => {
+  const { lid, phone } = req.body;
+  if (!lid || !phone) return res.status(400).json({ error: 'lid e phone obrigatórios' });
+  const db = getDB();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'lid_phone_map'").get();
+  let map = {};
+  try { map = JSON.parse(row?.value || '{}'); } catch {}
+  map[lid.replace(/\D/g, '')] = phone.replace(/\D/g, '');
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('lid_phone_map', ?)").run(JSON.stringify(map));
+  res.json(map);
+});
+
 // ── GRUPOS ───────────────────────────────────────────────────────────────────
 router.get('/groups', async (req, res) => {
   try {

@@ -32,9 +32,19 @@ function getValidatorNames(db) {
   return getValidators(db).map(v => v.name).join(' ou ');
 }
 
-function getValidatorName(db, phone) {
-  const v = getValidators(db).find(v => phoneMatch(phone, v.phone));
-  return v ? v.name : phone;
+function getValidatorName(db, sender) {
+  const v = getValidators(db).find(v => phoneMatch(sender, v.phone) || (v.lid && sender === v.lid));
+  return v ? v.name : sender;
+}
+
+function getLidMap(db) {
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'lid_phone_map'").get();
+  try { return JSON.parse(row?.value || '{}'); } catch { return {}; }
+}
+
+function resolveSender(sender, db) {
+  const map = getLidMap(db);
+  return map[sender] || sender;
 }
 
 async function handleMessage(msg) {
@@ -134,7 +144,8 @@ async function handleMessage(msg) {
     }
 
     // 3º — Não é responsável e não é validador: bloqueado
-    if (!phoneMatch(senderPhone, pendency.responsible_phone)) {
+    const effectivePhone = resolveSender(senderPhone, db);
+    if (!phoneMatch(effectivePhone, pendency.responsible_phone)) {
       await rply(msg,
         `⛔ Você não é o responsável pela pendência *#${pendencyId}*.\n` +
         `Apenas *${pendency.responsible_name}* pode atualizar esta pendência.`
@@ -203,7 +214,8 @@ async function handleMessage(msg) {
       return;
     }
 
-    if (!phoneMatch(senderPhone, pendency.responsible_phone)) {
+    const effectivePhone = resolveSender(senderPhone, db);
+    if (!phoneMatch(effectivePhone, pendency.responsible_phone)) {
       await rply(msg, `⛔ Apenas *${pendency.responsible_name}* pode marcar esta pendência.`);
       return;
     }
@@ -257,6 +269,12 @@ async function handleMessage(msg) {
     }
 
     await rply(msg, text);
+    return;
+  }
+
+  // ── #meuid ───────────────────────────────────────────────────────────────
+  if (body === '#meuid') {
+    await rply(msg, `Seu ID: *${senderPhone}*`);
     return;
   }
 
