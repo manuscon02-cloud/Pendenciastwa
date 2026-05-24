@@ -62,7 +62,7 @@ function seedPendencies(db) {
     'INSERT INTO pendencies (title, description, responsible_name, responsible_phone, deadline, priority) VALUES (?, ?, ?, ?, ?, ?)'
   );
   db.transaction(list => {
-    for (const [title, desc, name, phone, , priority] of list)
+    for (const [title, desc, name, phone, priority] of list)
       stmt.run(title, desc, name, phone, DL, priority);
   })(rows);
 
