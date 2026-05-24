@@ -48,13 +48,15 @@ router.get('/validators', (req, res) => {
 });
 
 router.post('/validators', (req, res) => {
-  const { name, phone } = req.body;
+  const { name, phone, lid } = req.body;
   if (!name || !phone) return res.status(400).json({ error: 'name e phone obrigatórios' });
   const db = getDB();
   const row = db.prepare("SELECT value FROM bot_config WHERE key = 'validators'").get();
   let list = [];
   try { list = JSON.parse(row?.value || '[]'); } catch {}
-  list.push({ name, phone: phone.replace(/\D/g, '') });
+  const entry = { name, phone: phone.replace(/\D/g, '') };
+  if (lid) entry.lid = lid.replace(/\D/g, '');
+  list.push(entry);
   db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(JSON.stringify(list));
   res.json(list);
 });

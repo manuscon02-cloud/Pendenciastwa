@@ -22,8 +22,10 @@ function getValidators(db) {
   try { return JSON.parse(row.value); } catch { return []; }
 }
 
-function isValidator(db, phone) {
-  return getValidators(db).some(v => phoneMatch(phone, v.phone));
+function isValidator(db, sender) {
+  return getValidators(db).some(v =>
+    phoneMatch(sender, v.phone) || (v.lid && sender === v.lid)
+  );
 }
 
 function getValidatorNames(db) {
@@ -43,14 +45,8 @@ async function handleMessage(msg) {
   const groupCfg = db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get();
   if (groupCfg && msg.from !== groupCfg.value) return;
 
-  let senderPhone;
-  if (msg.author && msg.author.includes('@lid')) {
-    const chat = await msg.getChat();
-    const participant = chat.participants?.find(p => p.id._serialized === msg.author);
-    senderPhone = participant ? participant.id.user : null;
-  } else {
-    senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
-  }
+  const senderRaw = msg.author || '';
+  const senderPhone = senderRaw.replace(/@c\.us$/, '').replace(/@lid$/, '');
   if (!senderPhone) return;
 
   const rawBody = (msg.body || '').trim();
@@ -66,9 +62,6 @@ async function handleMessage(msg) {
     const percentMap = { A: 0, B: 25, C: 50, D: 75, E: 100 };
     const percent = percentMap[letter];
     const nowIso = new Date().toISOString();
-
-    const validators = getValidators(db);
-    console.log(`[DEBUG] senderPhone=${senderPhone} | validators=${JSON.stringify(validators)} | isValidator=${isValidator(db, senderPhone)}`);
 
     // 1º — Validador: autonomia total e irrestrita
     if (isValidator(db, senderPhone)) {
