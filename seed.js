@@ -17,7 +17,7 @@ const PHONES = {
 };
 
 const VALIDATORS = [
-  { name: 'Antônio', phone: '16999688354' },
+  { name: 'Antônio', phone: '16993101683' },
   { name: 'Ronaldo', phone: '16981735919' },
 ];
 

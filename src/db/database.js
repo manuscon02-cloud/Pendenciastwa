@@ -68,7 +68,7 @@ function seedPendencies(db) {
 
   db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(
     JSON.stringify([
-      { name: 'Antônio', phone: '16999688354' },
+      { name: 'Antônio', phone: '16993101683' },
       { name: 'Ronaldo', phone: '16981735919' },
     ])
   );
