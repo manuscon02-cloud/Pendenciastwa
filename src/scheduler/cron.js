@@ -66,7 +66,8 @@ function buildMessage(pendencies, concluidas) {
 
   text += `${sep}\n`;
   text += `✅ ${concluidas} concluída(s)  |  🔴 ${pendencies.length} aberta(s)\n`;
-  text += `📸 Envie foto com *#feito [nº]* para registrar conclusão`;
+  text += `📸 Envie foto com *#feito [nº]* para registrar conclusão\n\n`;
+  text += `_⚙️ Mensagem automática · Sistema TWA de Gestão de Obras_`;
 
   return { text, mentions };
 }
