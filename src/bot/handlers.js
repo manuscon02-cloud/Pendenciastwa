@@ -60,6 +60,9 @@ async function handleMessage(msg) {
     const percent = percentMap[letter];
     const nowIso = new Date().toISOString();
 
+    const validators = getValidators(db);
+    console.log(`[DEBUG] senderPhone=${senderPhone} | validators=${JSON.stringify(validators)} | isValidator=${isValidator(db, senderPhone)}`);
+
     // 1º — Validador: autonomia total e irrestrita
     if (isValidator(db, senderPhone)) {
       const pendency = db.prepare(
