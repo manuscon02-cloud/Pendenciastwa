@@ -5,29 +5,28 @@ const { sendMessage, isClientReady } = require('../bot/whatsapp');
 let jobs = [];
 
 function buildMessage(pendencies) {
-  const now = new Date().toLocaleString('pt-BR', {
+  const agora = new Date().toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
-    hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit'
+    hour: '2-digit', minute: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric'
   });
+  const [datePart, timePart] = agora.split(', ');
+  const sep = '━'.repeat(29);
 
-  let msg = `⏰ *COBRANÇA AUTOMÁTICA – ${now}*\n${'═'.repeat(32)}\n\n`;
+  let msg = `⚠️ *PENDÊNCIAS – OBRA NESTLÉ MONTES CLAROS*\n`;
+  msg += `📅 Data: ${datePart}  🕐 ${timePart}\n`;
+  msg += `${sep}\n\n`;
 
   pendencies.forEach(p => {
-    const emoji = p.priority === 'alta' ? '🔴' : p.priority === 'media' ? '🟡' : '🟢';
-    const dl = new Date(p.deadline).toLocaleDateString('pt-BR');
-    msg += `${emoji} *#${p.id} – ${p.title}*\n`;
-    if (p.description) msg += `   📝 ${p.description}\n`;
-    msg += `   👤 *${p.responsible_name}*\n`;
-    msg += `   📅 Prazo: *${dl}*\n\n`;
+    const prioLabel = p.priority === 'alta' ? '🔴 Alta' : p.priority === 'media' ? '🟡 Média' : '🟢 Baixa';
+    msg += `☐ *#${p.id}* – ${p.title}\n`;
+    msg += `   👤 ${p.responsible_name}  |  ${prioLabel}\n\n`;
   });
 
-  msg += `${'─'.repeat(32)}\n`;
-  msg += `📌 *${pendencies.length} pendência(s) em aberto*\n\n`;
-  msg += `✅ *Para concluir:*\n`;
-  msg += `Envie uma foto com a legenda:\n`;
-  msg += `*#feito [número]*\n`;
-  msg += `Exemplo: *#feito 1* (com foto)\n\n`;
-  msg += `📊 Ver tudo: *#status*  |  ❓ Ajuda: *#ajuda*`;
+  msg += `${sep}\n`;
+  msg += `📌 *${pendencies.length} pendência(s) em aberto*\n`;
+  msg += `✅ Concluir: envie foto com legenda *#feito [número]*\n`;
+  msg += `   Exemplo: foto + legenda *#feito 1*`;
 
   return msg;
 }

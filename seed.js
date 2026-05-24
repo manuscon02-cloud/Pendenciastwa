@@ -64,7 +64,7 @@ const insertMany = db.transaction((items) => {
 insertMany(pendencies);
 
 // Insere/atualiza validadores
-db.prepare('INSERT OR REPLACE INTO bot_config (key, value) VALUES ("validators", ?)').run(
+db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(
   JSON.stringify(VALIDATORS)
 );
 
