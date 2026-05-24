@@ -13,7 +13,7 @@ function progressBar(pct) {
 function phoneMatch(a, b) {
   const clean = (n) => n.replace(/\D/g, '');
   const ca = clean(a), cb = clean(b);
-  return ca.endsWith(cb.slice(-8)) || cb.endsWith(ca.slice(-8));
+  return ca.endsWith(cb.slice(-10)) || cb.endsWith(ca.slice(-10));
 }
 
 function getValidators(db) {
