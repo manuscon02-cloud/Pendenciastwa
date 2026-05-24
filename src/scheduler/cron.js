@@ -4,29 +4,49 @@ const { sendMessage, isClientReady } = require('../bot/whatsapp');
 
 let jobs = [];
 
-function buildMessage(pendencies) {
-  const agora = new Date().toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    hour: '2-digit', minute: '2-digit',
-    day: '2-digit', month: '2-digit', year: 'numeric'
-  });
-  const [datePart, timePart] = agora.split(', ');
-  const sep = '━'.repeat(29);
+const HEADER = '🤖 *AGENTE DE OBRAS TWA*\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 
-  let msg = `⚠️ *PENDÊNCIAS – OBRA NESTLÉ MONTES CLAROS*\n`;
-  msg += `📅 Data: ${datePart}  🕐 ${timePart}\n`;
+function buildMessage(pendencies, concluidas) {
+  const now = new Date();
+  const tz = { timeZone: 'America/Sao_Paulo' };
+
+  const diaSemanaRaw = now.toLocaleDateString('pt-BR', { ...tz, weekday: 'long' });
+  const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1).split('-')[0];
+  const data = now.toLocaleDateString('pt-BR', { ...tz, day: '2-digit', month: '2-digit', year: 'numeric' });
+  const hora = now.toLocaleTimeString('pt-BR', { ...tz, hour: '2-digit', minute: '2-digit' });
+
+  const sep = '━'.repeat(25);
+
+  let msg = HEADER;
+  msg += `🏗️ *CHECKLIST – NESTLÉ MONTES CLAROS*\n`;
+  msg += `🗓️ ${diaSemana} ${data}  |  ⏰ ${hora}\n`;
   msg += `${sep}\n\n`;
 
-  pendencies.forEach(p => {
-    const prioLabel = p.priority === 'alta' ? '🔴 Alta' : p.priority === 'media' ? '🟡 Média' : '🟢 Baixa';
-    msg += `☐ *#${p.id}* – ${p.title}\n`;
-    msg += `   👤 ${p.responsible_name}  |  ${prioLabel}\n\n`;
-  });
+  const alta  = pendencies.filter(p => p.priority === 'alta');
+  const media = pendencies.filter(p => p.priority === 'media');
+  const baixa = pendencies.filter(p => p.priority === 'baixa');
+
+  if (alta.length > 0) {
+    msg += `🔴 *CRÍTICO – resolver hoje*\n`;
+    alta.forEach(p => { msg += `◻️ *#${p.id}*  ${p.title} → ${p.responsible_name}\n`; });
+    msg += '\n';
+  }
+
+  if (media.length > 0) {
+    msg += `🟡 *IMPORTANTE*\n`;
+    media.forEach(p => { msg += `◻️ *#${p.id}*  ${p.title} → ${p.responsible_name}\n`; });
+    msg += '\n';
+  }
+
+  if (baixa.length > 0) {
+    msg += `🟢 *PROGRAMADO*\n`;
+    baixa.forEach(p => { msg += `◻️ *#${p.id}*  ${p.title} → ${p.responsible_name}\n`; });
+    msg += '\n';
+  }
 
   msg += `${sep}\n`;
-  msg += `📌 *${pendencies.length} pendência(s) em aberto*\n`;
-  msg += `✅ Concluir: envie foto com legenda *#feito [número]*\n`;
-  msg += `   Exemplo: foto + legenda *#feito 1*`;
+  msg += `✅ ${concluidas} concluída(s)  |  🔴 ${pendencies.length} aberta(s)\n`;
+  msg += `📸 Envie foto com *#feito [nº]* para registrar conclusão`;
 
   return msg;
 }
@@ -64,10 +84,12 @@ async function sendReminders() {
     return;
   }
 
+  const concluidas = db.prepare("SELECT COUNT(*) as c FROM pendencies WHERE status = 'concluida'").get().c;
+
   try {
-    await sendMessage(cfg.value, buildMessage(pendencies));
+    await sendMessage(cfg.value, buildMessage(pendencies, concluidas));
     const now = new Date().toISOString();
-    const logStmt = db.prepare('INSERT INTO reminder_logs (pendency_id, sent_at) VALUES (?, ?)');
+    const logStmt    = db.prepare('INSERT INTO reminder_logs (pendency_id, sent_at) VALUES (?, ?)');
     const updateStmt = db.prepare('UPDATE pendencies SET last_reminded_at = ? WHERE id = ?');
 
     pendencies.forEach(p => {
@@ -82,7 +104,6 @@ async function sendReminders() {
 }
 
 function initScheduler() {
-  // Para os jobs antigos
   jobs.forEach(j => j.destroy());
   jobs = [];
 
@@ -90,7 +111,7 @@ function initScheduler() {
   const schedules = db.prepare('SELECT * FROM schedules WHERE active = 1').all();
 
   schedules.forEach(s => {
-    const expr = `${s.minute} ${s.hour} * * 1-6`; // Segunda a Sábado
+    const expr = `${s.minute} ${s.hour} * * 1-6`;
     const job = cron.schedule(expr, async () => {
       console.log(`🕐 Executando cobrança: ${s.hour}:${String(s.minute).padStart(2, '0')}`);
       await sendReminders();
