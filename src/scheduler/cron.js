@@ -6,11 +6,16 @@ let jobs = [];
 
 const HEADER = '🤖 *AGENTE DE OBRAS TWA*\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 
-// Converte phone do banco (ex: 16997868778) para ID WhatsApp (5516997868778@c.us)
 function toWaId(phone) {
   const n = phone.replace(/\D/g, '');
   const cc = n.startsWith('55') ? n : '55' + n;
   return `${cc}@c.us`;
+}
+
+function progressBar(pct) {
+  const p = pct || 0;
+  const filled = Math.round(p / 10);
+  return '█'.repeat(filled) + '░'.repeat(10 - filled) + ' ' + p + '%';
 }
 
 function buildMessage(pendencies, concluidas) {
@@ -31,12 +36,13 @@ function buildMessage(pendencies, concluidas) {
     return `@${id.replace('@c.us', '')}`;
   };
 
-  const formatBloco = (items) => {
-    let s = '';
-    for (const p of items) {
-      s += `◻️ *#${p.id}* ${p.title}\n`;
-      s += `   👤 ${mentionTag(p.responsible_phone)}\n\n`;
-    }
+  const formatItem = (p) => {
+    const pct = p.progress || 0;
+    const warned = pct === 0 && p.last_reminded_at;
+    const prefix = warned ? '⚠️ ' : '';
+    let s = `${prefix}◻️ *#${p.id}* ${p.title}\n`;
+    s += `   👤 ${mentionTag(p.responsible_phone)}\n`;
+    s += `   ${progressBar(pct)}\n\n`;
     return s;
   };
 
@@ -51,22 +57,44 @@ function buildMessage(pendencies, concluidas) {
 
   if (alta.length > 0) {
     text += `🔴 *CRÍTICO – resolver hoje*\n\n`;
-    text += formatBloco(alta);
+    alta.forEach(p => { text += formatItem(p); });
   }
 
   if (media.length > 0) {
     text += `🟡 *IMPORTANTE*\n\n`;
-    text += formatBloco(media);
+    media.forEach(p => { text += formatItem(p); });
   }
 
   if (baixa.length > 0) {
     text += `🟢 *PROGRAMADO*\n\n`;
-    text += formatBloco(baixa);
+    baixa.forEach(p => { text += formatItem(p); });
   }
+
+  // Monta menu de códigos agrupado por responsável
+  text += `${sep}\n`;
+  text += `📊 *COMO ATUALIZAR SEU PROGRESSO:*\n\n`;
+
+  const byResponsible = {};
+  for (const p of pendencies) {
+    const key = `${p.responsible_name}|${p.responsible_phone}`;
+    if (!byResponsible[key]) {
+      byResponsible[key] = { name: p.responsible_name, phone: p.responsible_phone, ids: [] };
+    }
+    byResponsible[key].ids.push(p.id);
+  }
+
+  for (const resp of Object.values(byResponsible)) {
+    const codes = resp.ids.map(id => `*${id}A* *${id}B* *${id}C* *${id}D* *${id}E*`).join(' ');
+    text += `👤 ${mentionTag(resp.phone)} → ${codes}\n`;
+  }
+
+  text += `\n📌 *Legenda:*\n`;
+  text += `A = 0% · B = 25% · C = 50% · D = 75% · E = ✅ Concluído\n\n`;
+  text += `*Exemplo:* responda *1C* para marcar #1 em 50%\n`;
+  text += `Ao marcar E (concluído) envie também uma *foto* como comprovante\n\n`;
 
   text += `${sep}\n`;
   text += `✅ ${concluidas} concluída(s)  |  🔴 ${pendencies.length} aberta(s)\n`;
-  text += `📸 Envie foto com *#feito [nº]* para registrar conclusão\n\n`;
   text += `_⚙️ Mensagem automática · Sistema TWA de Gestão de Obras_`;
 
   return { text, mentions };

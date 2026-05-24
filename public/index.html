@@ -101,6 +101,11 @@
   .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
   .empty span { font-size: 2.5rem; display: block; margin-bottom: .75rem; }
 
+  .progress-wrap { margin-top: .6rem; }
+  .progress-bg { background: var(--surface2); border-radius: 4px; height: 7px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+  .pend-item.in-progress { box-shadow: 0 0 0 1px #eab30850; }
+
   @media(max-width:480px) { .stats { grid-template-columns: repeat(3,1fr); } .form-row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -244,12 +249,25 @@
       </template>
       <div class="pend-list">
         <template x-for="p in highPriority" :key="p.id">
-          <div class="pend-item" :class="p.priority">
+          <div class="pend-item" :class="[p.priority, p.progress > 0 ? 'in-progress' : '']">
             <div class="pend-id" x-text="'#' + p.id"></div>
             <div class="pend-title" x-text="p.title"></div>
             <div class="pend-meta">
               <span x-text="'👤 ' + p.responsible_name"></span>
               <span x-text="'📅 ' + fmtDate(p.deadline)"></span>
+            </div>
+            <div class="progress-wrap">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+                <span style="font-size:.72rem;color:var(--muted)">Progresso</span>
+                <span style="font-size:.72rem;font-weight:700"
+                  :style="{color: (p.progress||0) >= 100 ? 'var(--green)' : (p.progress||0) > 0 ? 'var(--yellow)' : 'var(--muted)'}"
+                  x-text="(p.progress || 0) + '%'"></span>
+              </div>
+              <div class="progress-bg">
+                <div class="progress-fill"
+                  :style="{width: (p.progress||0) + '%', background: (p.progress||0) >= 100 ? 'var(--green)' : (p.progress||0) > 0 ? 'var(--yellow)' : 'var(--surface2)'}">
+                </div>
+              </div>
             </div>
           </div>
         </template>
@@ -270,15 +288,20 @@
 
     <div class="pend-list">
       <template x-for="p in pendencies" :key="p.id">
-        <div class="pend-item" :class="p.priority">
+        <div class="pend-item" :class="[p.priority, p.progress > 0 ? 'in-progress' : '']">
           <div class="pend-header">
             <div>
               <div class="pend-id" x-text="'Pendência #' + p.id"></div>
               <div class="pend-title" x-text="p.title"></div>
               <div class="pend-desc" x-show="p.description" x-text="p.description"></div>
             </div>
-            <div class="badge" :class="p.priority === 'alta' ? 'badge-red' : p.priority === 'media' ? 'badge-yellow' : 'badge-green'"
-              x-text="p.priority === 'alta' ? '🔴 Alta' : p.priority === 'media' ? '🟡 Média' : '🟢 Baixa'">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.35rem">
+              <div class="badge" :class="p.priority === 'alta' ? 'badge-red' : p.priority === 'media' ? 'badge-yellow' : 'badge-green'"
+                x-text="p.priority === 'alta' ? '🔴 Alta' : p.priority === 'media' ? '🟡 Média' : '🟢 Baixa'">
+              </div>
+              <template x-if="p.progress > 0 && p.progress < 100">
+                <span style="font-size:.65rem;background:#2a2a0a;color:var(--yellow);padding:.15rem .5rem;border-radius:4px;white-space:nowrap">⚡ Em andamento</span>
+              </template>
             </div>
           </div>
           <div class="pend-meta">
@@ -288,6 +311,21 @@
             <template x-if="p.last_reminded_at">
               <span x-text="'📨 Cobrado: ' + fmtDatetime(p.last_reminded_at)"></span>
             </template>
+          </div>
+          <div class="progress-wrap">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+              <span style="font-size:.72rem;color:var(--muted)">Progresso</span>
+              <span style="font-size:.72rem;font-weight:700"
+                :style="{color: (p.progress||0) >= 100 ? 'var(--green)' : (p.progress||0) > 0 ? 'var(--yellow)' : 'var(--muted)'}"
+                x-text="(p.progress || 0) + '%'"></span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill"
+                :style="{width: (p.progress||0) + '%', background: (p.progress||0) >= 100 ? 'var(--green)' : (p.progress||0) > 0 ? 'var(--yellow)' : 'var(--surface2)'}">
+              </div>
+            </div>
+            <div x-show="p.progress_updated_at" style="font-size:.68rem;color:var(--muted);margin-top:.2rem"
+              x-text="'Atualizado: ' + fmtDatetime(p.progress_updated_at)"></div>
           </div>
           <div class="pend-actions">
             <button class="btn btn-ghost" @click="openEditModal(p)">✏️ Editar</button>

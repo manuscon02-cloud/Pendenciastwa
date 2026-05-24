@@ -92,7 +92,9 @@ function initDB() {
       proof_path   TEXT DEFAULT NULL,
       last_reminded_at TEXT DEFAULT NULL,
       created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
-      completed_at TEXT DEFAULT NULL
+      completed_at TEXT DEFAULT NULL,
+      progress     INTEGER DEFAULT 0,
+      progress_updated_at TEXT DEFAULT NULL
     );
 
     CREATE TABLE IF NOT EXISTS schedules (
@@ -114,6 +116,9 @@ function initDB() {
       FOREIGN KEY (pendency_id) REFERENCES pendencies(id)
     );
   `);
+
+  try { db.exec('ALTER TABLE pendencies ADD COLUMN progress INTEGER DEFAULT 0'); } catch (_) {}
+  try { db.exec('ALTER TABLE pendencies ADD COLUMN progress_updated_at TEXT DEFAULT NULL'); } catch (_) {}
 
   const schedCount = db.prepare('SELECT COUNT(*) as c FROM schedules').get();
   if (schedCount.c === 0) {

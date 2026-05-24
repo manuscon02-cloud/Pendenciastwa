@@ -8,6 +8,12 @@ if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 const HEADER = '🤖 *AGENTE DE OBRAS TWA*\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 const rply = (m, t) => m.reply(HEADER + t);
 
+function progressBar(pct) {
+  const p = pct || 0;
+  const filled = Math.round(p / 10);
+  return '█'.repeat(filled) + '░'.repeat(10 - filled) + ' ' + p + '%';
+}
+
 function phoneMatch(a, b) {
   const clean = (n) => n.replace(/\D/g, '');
   const ca = clean(a), cb = clean(b);
@@ -39,9 +45,97 @@ async function handleMessage(msg) {
   const senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
   if (!senderPhone) return;
 
-  const body = (msg.body || '').trim().toLowerCase();
+  const rawBody = (msg.body || '').trim();
+  const body = rawBody.toLowerCase();
 
-  if (!body.startsWith('#')) return;
+  const progressMatch = rawBody.match(/^(\d+)([abcdeABCDE])$/i);
+  if (!progressMatch && !body.startsWith('#')) return;
+
+  // ── Códigos de progresso (ex: 1C, 2A, 14E) ───────────────────────────────
+  if (progressMatch) {
+    const pendencyId = parseInt(progressMatch[1]);
+    const letter = progressMatch[2].toUpperCase();
+    const percentMap = { A: 0, B: 25, C: 50, D: 75, E: 100 };
+    const percent = percentMap[letter];
+
+    const pendency = db.prepare(
+      "SELECT * FROM pendencies WHERE id = ? AND status = 'pendente'"
+    ).get(pendencyId);
+
+    if (!pendency) {
+      const anyPend = db.prepare('SELECT * FROM pendencies WHERE id = ?').get(pendencyId);
+      if (!anyPend) {
+        await rply(msg, `❌ Pendência *#${pendencyId}* não encontrada.`);
+      } else if (anyPend.status === 'concluida') {
+        await rply(msg, `✅ Pendência *#${pendencyId}* já foi concluída.`);
+      } else {
+        await rply(msg, `⏳ Pendência *#${pendencyId}* já está aguardando validação.`);
+      }
+      return;
+    }
+
+    if (!phoneMatch(senderPhone, pendency.responsible_phone)) {
+      await rply(msg,
+        `⛔ Você não é o responsável pela pendência *#${pendencyId}*.\n` +
+        `Apenas *${pendency.responsible_name}* pode atualizar esta pendência.`
+      );
+      return;
+    }
+
+    if (letter === 'E') {
+      if (!msg.hasMedia) {
+        await rply(msg,
+          `📸 *${pendency.responsible_name}*, para marcar como concluído envie uma *foto* ` +
+          `junto com o código.\nExemplo: foto + legenda *${pendencyId}E*`
+        );
+        return;
+      }
+
+      let proofPath = null;
+      try {
+        const media = await msg.downloadMedia();
+        if (media) {
+          const ext = media.mimetype.split('/')[1].split(';')[0] || 'jpg';
+          const filename = `proof_${pendencyId}_${Date.now()}.${ext}`;
+          fs.writeFileSync(path.join(UPLOADS_DIR, filename), Buffer.from(media.data, 'base64'));
+          proofPath = `/uploads/${filename}`;
+        }
+      } catch (err) {
+        console.error('Erro ao salvar comprovante:', err.message);
+      }
+
+      const nowIso = new Date().toISOString();
+      db.prepare(`
+        UPDATE pendencies
+        SET progress = 100, progress_updated_at = ?, status = 'aguardando_validacao', proof_path = ?
+        WHERE id = ?
+      `).run(nowIso, proofPath, pendencyId);
+
+      const validatorNames = getValidatorNames(db) || 'Antônio ou Ronaldo';
+      await rply(msg,
+        `📋 *Comprovante recebido para pendência #${pendencyId}!*\n\n` +
+        `📌 *${pendency.title}*\n` +
+        `👤 ${pendency.responsible_name}\n\n` +
+        `⏳ *Aguardando validação de ${validatorNames}*`
+      );
+      console.log(`📋 Pendência #${pendencyId} → aguardando_validacao via código E — ${senderPhone}`);
+    } else {
+      const nowIso = new Date().toISOString();
+      db.prepare(`
+        UPDATE pendencies SET progress = ?, progress_updated_at = ? WHERE id = ?
+      `).run(percent, nowIso, pendencyId);
+
+      const hora = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+      await rply(msg,
+        `📊 Progresso atualizado!\n` +
+        `*#${pendencyId}* ${pendency.title}\n` +
+        `${progressBar(percent)}\n` +
+        `👤 ${pendency.responsible_name} · ${hora}`
+      );
+      console.log(`📊 Pendência #${pendencyId} → ${percent}% via código ${letter} — ${senderPhone}`);
+    }
+    return;
+  }
 
   // ── #feito [id] + foto ────────────────────────────────────────────────────
   if (body.startsWith('#feito')) {
@@ -97,9 +191,9 @@ async function handleMessage(msg) {
 
     db.prepare(`
       UPDATE pendencies
-      SET status = 'aguardando_validacao', proof_path = ?
+      SET status = 'aguardando_validacao', proof_path = ?, progress = 100, progress_updated_at = ?
       WHERE id = ?
-    `).run(proofPath, id);
+    `).run(proofPath, new Date().toISOString(), id);
 
     const validatorNames = getValidatorNames(db) || 'Antônio ou Ronaldo';
 
