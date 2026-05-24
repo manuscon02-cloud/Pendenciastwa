@@ -29,5 +29,4 @@ cmds = []
 cmd = "node src/index.js"
 
 [variables]
-PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
 TZ = "America/Sao_Paulo"

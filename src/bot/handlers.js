@@ -45,8 +45,9 @@ async function handleMessage(msg) {
 
   let senderPhone;
   if (msg.author && msg.author.includes('@lid')) {
-    const contact = await msg.getContact();
-    senderPhone = contact.number || null;
+    const chat = await msg.getChat();
+    const participant = chat.participants?.find(p => p.id._serialized === msg.author);
+    senderPhone = participant ? participant.id.user : null;
   } else {
     senderPhone = msg.author ? msg.author.replace('@c.us', '') : null;
   }
