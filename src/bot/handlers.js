@@ -58,16 +58,71 @@ async function handleMessage(msg) {
     const letter = progressMatch[2].toUpperCase();
     const percentMap = { A: 0, B: 25, C: 50, D: 75, E: 100 };
     const percent = percentMap[letter];
+    const nowIso = new Date().toISOString();
 
+    // 1º — Validador: autonomia total e irrestrita
+    if (isValidator(db, senderPhone)) {
+      const pendency = db.prepare(
+        "SELECT * FROM pendencies WHERE id = ? AND status != 'concluida'"
+      ).get(pendencyId);
+
+      if (!pendency) {
+        const any = db.prepare('SELECT * FROM pendencies WHERE id = ?').get(pendencyId);
+        await rply(msg, any
+          ? `✅ Pendência *#${pendencyId}* já foi concluída.`
+          : `❌ Pendência *#${pendencyId}* não encontrada.`
+        );
+        return;
+      }
+
+      const validatorName = getValidatorName(db, senderPhone);
+
+      if (letter === 'E') {
+        db.prepare(`
+          UPDATE pendencies
+          SET status = 'concluida', progress = 100, progress_updated_at = ?,
+              completed_at = datetime('now', 'localtime')
+          WHERE id = ?
+        `).run(nowIso, pendencyId);
+
+        const hora = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+        await rply(msg,
+          `✅ *Pendência #${pendencyId} CONCLUÍDA!*\n\n` +
+          `📋 *${pendency.title}*\n` +
+          `👤 ${pendency.responsible_name}\n` +
+          `✅ Encerrado por: ${validatorName}\n` +
+          `🕐 ${hora}`
+        );
+        bufferAdd({ id: pendencyId, title: pendency.title, progress: 100, responsible_name: pendency.responsible_name, status: 'concluida' });
+        console.log(`✅ Pendência #${pendencyId} encerrada por ${validatorName}`);
+      } else {
+        db.prepare(`
+          UPDATE pendencies SET progress = ?, progress_updated_at = ? WHERE id = ?
+        `).run(percent, nowIso, pendencyId);
+
+        const hora = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+        await rply(msg,
+          `📊 Progresso atualizado!\n` +
+          `*#${pendencyId}* ${pendency.title}\n` +
+          `${progressBar(percent)}\n` +
+          `👤 ${pendency.responsible_name} · ${hora}`
+        );
+        bufferAdd({ id: pendencyId, title: pendency.title, progress: percent, responsible_name: pendency.responsible_name, status: pendency.status });
+        console.log(`📊 Pendência #${pendencyId} → ${percent}% via ${letter} por ${validatorName}`);
+      }
+      return;
+    }
+
+    // 2º — Responsável: apenas pendências em status 'pendente'
     const pendency = db.prepare(
       "SELECT * FROM pendencies WHERE id = ? AND status = 'pendente'"
     ).get(pendencyId);
 
     if (!pendency) {
-      const anyPend = db.prepare('SELECT * FROM pendencies WHERE id = ?').get(pendencyId);
-      if (!anyPend) {
+      const any = db.prepare('SELECT * FROM pendencies WHERE id = ?').get(pendencyId);
+      if (!any) {
         await rply(msg, `❌ Pendência *#${pendencyId}* não encontrada.`);
-      } else if (anyPend.status === 'concluida') {
+      } else if (any.status === 'concluida') {
         await rply(msg, `✅ Pendência *#${pendencyId}* já foi concluída.`);
       } else {
         await rply(msg, `⏳ Pendência *#${pendencyId}* já está aguardando validação.`);
@@ -75,15 +130,14 @@ async function handleMessage(msg) {
       return;
     }
 
-    if (!phoneMatch(senderPhone, pendency.responsible_phone) && !isValidator(db, senderPhone)) {
+    // 3º — Não é responsável e não é validador: bloqueado
+    if (!phoneMatch(senderPhone, pendency.responsible_phone)) {
       await rply(msg,
         `⛔ Você não é o responsável pela pendência *#${pendencyId}*.\n` +
         `Apenas *${pendency.responsible_name}* pode atualizar esta pendência.`
       );
       return;
     }
-
-    const nowIso = new Date().toISOString();
 
     if (letter === 'E') {
       db.prepare(`
@@ -94,13 +148,14 @@ async function handleMessage(msg) {
 
       const validatorNames = getValidatorNames(db) || 'Antônio ou Ronaldo';
       await rply(msg,
-        `✅ *Pendência #${pendencyId} marcada como concluída!*\n\n` +
-        `📌 *${pendency.title}*\n` +
-        `👤 ${pendency.responsible_name}\n\n` +
-        `⏳ *Aguardando validação de ${validatorNames}*`
+        `${progressBar(100)}\n` +
+        `*#${pendencyId}* ${pendency.title}\n` +
+        `👤 ${pendency.responsible_name} marcou como concluído\n` +
+        `⏳ Aguardando confirmação de ${validatorNames}\n` +
+        `Digite *${pendencyId}E* para encerrar.`
       );
       bufferAdd({ id: pendencyId, title: pendency.title, progress: 100, responsible_name: pendency.responsible_name, status: 'aguardando_validacao' });
-      console.log(`📋 Pendência #${pendencyId} → aguardando_validacao via código E — ${senderPhone}`);
+      console.log(`📋 Pendência #${pendencyId} → aguardando_validacao via E — ${senderPhone}`);
     } else {
       db.prepare(`
         UPDATE pendencies SET progress = ?, progress_updated_at = ? WHERE id = ?
@@ -114,12 +169,12 @@ async function handleMessage(msg) {
         `👤 ${pendency.responsible_name} · ${hora}`
       );
       bufferAdd({ id: pendencyId, title: pendency.title, progress: percent, responsible_name: pendency.responsible_name, status: 'pendente' });
-      console.log(`📊 Pendência #${pendencyId} → ${percent}% via código ${letter} — ${senderPhone}`);
+      console.log(`📊 Pendência #${pendencyId} → ${percent}% via ${letter} — ${senderPhone}`);
     }
     return;
   }
 
-  // ── #feito [id] ───────────────────────────────────────────────────────────
+  // ── #feito [id] — equivalente ao código E para o responsável ─────────────
   if (body.startsWith('#feito')) {
     const id = parseInt((body.split(' ')[1] || '').trim());
 
@@ -158,102 +213,14 @@ async function handleMessage(msg) {
 
     const validatorNames = getValidatorNames(db) || 'Antônio ou Ronaldo';
     await rply(msg,
-      `✅ *Pendência #${id} marcada como concluída!*\n\n` +
-      `📌 *${pendency.title}*\n` +
-      `👤 ${pendency.responsible_name}\n\n` +
-      `⏳ *Aguardando validação de ${validatorNames}*\n\n` +
-      `✅ Para validar: *#validar ${id}*`
+      `${progressBar(100)}\n` +
+      `*#${id}* ${pendency.title}\n` +
+      `👤 ${pendency.responsible_name} marcou como concluído\n` +
+      `⏳ Aguardando confirmação de ${validatorNames}\n` +
+      `Digite *${id}E* para encerrar.`
     );
     bufferAdd({ id, title: pendency.title, progress: 100, responsible_name: pendency.responsible_name, status: 'aguardando_validacao' });
     console.log(`📋 Pendência #${id} → aguardando_validacao via #feito — ${senderPhone}`);
-    return;
-  }
-
-  // ── #validar [id] — só validadores ───────────────────────────────────────
-  if (body.startsWith('#validar')) {
-    const id = parseInt((body.split(' ')[1] || '').trim());
-
-    if (!id || isNaN(id)) {
-      await rply(msg, '❌ Use: *#validar [número]*\nEx: *#validar 3*');
-      return;
-    }
-
-    if (!isValidator(db, senderPhone)) {
-      const names = getValidatorNames(db) || 'Antônio ou Ronaldo';
-      await rply(msg, `⛔ Apenas *${names}* podem validar pendências.`);
-      return;
-    }
-
-    const pendency = db.prepare(
-      "SELECT * FROM pendencies WHERE id = ? AND status != 'concluida'"
-    ).get(id);
-
-    if (!pendency) {
-      await rply(msg, `❌ Pendência *#${id}* não encontrada ou já foi concluída.`);
-      return;
-    }
-
-    const hora = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
-    const validatorName = getValidatorName(db, senderPhone);
-
-    db.prepare(`
-      UPDATE pendencies
-      SET status = 'concluida', progress = 100, progress_updated_at = ?, completed_at = datetime('now', 'localtime')
-      WHERE id = ?
-    `).run(new Date().toISOString(), id);
-
-    await rply(msg,
-      `✅ *Pendência #${id} VALIDADA E CONCLUÍDA!*\n\n` +
-      `📋 *${pendency.title}*\n` +
-      `👤 Responsável: ${pendency.responsible_name}\n` +
-      `✅ Validado por: ${validatorName}\n` +
-      `🕐 ${hora}`
-    );
-    bufferAdd({ id, title: pendency.title, progress: 100, responsible_name: pendency.responsible_name, status: 'concluida' });
-    console.log(`✅ Pendência #${id} validada por ${validatorName} (${senderPhone})`);
-    return;
-  }
-
-  // ── #rejeitar [id] [motivo] — só validadores ──────────────────────────────
-  if (body.startsWith('#rejeitar')) {
-    const parts = body.split(' ');
-    const id = parseInt((parts[1] || '').trim());
-    const motivo = parts.slice(2).join(' ').trim();
-
-    if (!id || isNaN(id)) {
-      await rply(msg, '❌ Use: *#rejeitar [número] [motivo]*\nEx: *#rejeitar 3 serviço incompleto*');
-      return;
-    }
-
-    if (!isValidator(db, senderPhone)) {
-      const names = getValidatorNames(db) || 'Antônio ou Ronaldo';
-      await rply(msg, `⛔ Apenas *${names}* podem rejeitar pendências.`);
-      return;
-    }
-
-    const pendency = db.prepare(
-      "SELECT * FROM pendencies WHERE id = ? AND status = 'aguardando_validacao'"
-    ).get(id);
-
-    if (!pendency) {
-      await rply(msg, `❌ Pendência *#${id}* não está aguardando validação.`);
-      return;
-    }
-
-    db.prepare(`
-      UPDATE pendencies
-      SET status = 'pendente', progress = 0, progress_updated_at = NULL
-      WHERE id = ?
-    `).run(id);
-
-    const motivoTexto = motivo ? `\n\n📝 *Motivo:* ${motivo}` : '';
-    await rply(msg,
-      `❌ *Pendência #${id} REJEITADA*\n\n` +
-      `📋 *${pendency.title}*\n` +
-      `👤 *${pendency.responsible_name}*, execute o serviço e marque novamente.${motivoTexto}\n\n` +
-      `✍️ Use *#feito ${id}* ou o código *${id}E* quando concluir`
-    );
-    console.log(`❌ Pendência #${id} rejeitada por ${senderPhone}. Motivo: ${motivo}`);
     return;
   }
 
@@ -270,7 +237,7 @@ async function handleMessage(msg) {
     let text = `📊 *STATUS DAS PENDÊNCIAS*\n${'─'.repeat(30)}\n`;
 
     if (emValidacao.length > 0) {
-      text += `\n🟠 *AGUARDANDO VALIDAÇÃO (${emValidacao.length}):*\n`;
+      text += `\n🟠 *AGUARDANDO CONFIRMAÇÃO (${emValidacao.length}):*\n`;
       emValidacao.forEach(p => {
         text += `  • *#${p.id}* ${p.title} — ${p.responsible_name}\n`;
       });
@@ -281,7 +248,8 @@ async function handleMessage(msg) {
       pendentes.forEach(p => {
         const emoji = p.priority === 'alta' ? '🔴' : p.priority === 'media' ? '🟡' : '🟢';
         const dl = new Date(p.deadline).toLocaleDateString('pt-BR');
-        text += `\n${emoji} *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}  📅 ${dl}\n`;
+        const bar = progressBar(p.progress || 0);
+        text += `\n${emoji} *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}  📅 ${dl}\n   ${bar}\n`;
       });
     }
 
@@ -295,14 +263,13 @@ async function handleMessage(msg) {
     await rply(msg,
       `📋 *COMANDOS DO BOT DE PENDÊNCIAS*\n\n` +
       `*Para todos os responsáveis:*\n` +
-      `✅ *#feito [número]* → marcar como concluído\n` +
       `📊 *[número][letra]* → atualizar progresso\n` +
-      `   A=0% · B=25% · C=50% · D=75% · E=Concluído\n` +
+      `   A=0% · B=25% · C=50% · D=75% · E=100%\n` +
       `   Exemplo: *1C* = item 1 em 50%\n` +
+      `✅ *#feito [número]* → marcar item como concluído\n` +
       `📊 *#status* → ver todas as pendências abertas\n\n` +
       `*Somente ${validatorNames}:*\n` +
-      `✅ *#validar [número]* → aprovar e concluir\n` +
-      `❌ *#rejeitar [número] [motivo]* → devolver pendência\n\n` +
+      `✅ *[número]E* → encerrar pendência imediatamente\n\n` +
       `❓ *#ajuda* → esta mensagem`
     );
   }

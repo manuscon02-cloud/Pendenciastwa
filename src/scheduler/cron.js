@@ -89,9 +89,8 @@ function buildMessage(pendencies, concluidas) {
   }
 
   text += `\n📌 *Legenda:*\n`;
-  text += `A = 0% · B = 25% · C = 50% · D = 75% · E = ✅ Concluído\n\n`;
-  text += `*Exemplo:* responda *1C* para marcar #1 em 50%\n`;
-  text += `Ao marcar E (concluído) envie também uma *foto* como comprovante\n\n`;
+  text += `*A=0% · B=25% · C=50% · D=75% · E=100%*\n\n`;
+  text += `*Exemplo:* responda *1C* para marcar #1 em 50%\n\n`;
 
   text += `${sep}\n`;
   text += `✅ ${concluidas} concluída(s)  |  🔴 ${pendencies.length} aberta(s)\n`;
