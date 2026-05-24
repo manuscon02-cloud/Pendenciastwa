@@ -125,7 +125,7 @@ async function sendReminders() {
 }
 
 function initScheduler() {
-  jobs.forEach(j => j.destroy());
+  jobs.forEach(j => j.stop());
   jobs = [];
 
   const db = getDB();
