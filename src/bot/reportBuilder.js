@@ -39,7 +39,7 @@ function buildReport() {
   text += `✅ *PENDÊNCIAS CONCLUÍDAS — ${concluidas.length} de ${total}*\n\n`;
   if (concluidas.length > 0) {
     concluidas.forEach(p => {
-      text += `✅ *#${p.id}* ${p.title}\n`;
+      text += `✅ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n`;
     });
   } else {
     text += `_Nenhuma pendência concluída ainda._\n`;
