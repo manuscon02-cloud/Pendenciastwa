@@ -273,7 +273,7 @@ async function handleMessage(msg) {
   }
 
   // ── #relatorio ────────────────────────────────────────────────────────────
-  if (body === '#relatorio') {
+  if (body === '#relatorio' || body === '#relatório') {
     const sep = '━'.repeat(25);
     const now = new Date();
     const tz = { timeZone: 'America/Sao_Paulo' };
