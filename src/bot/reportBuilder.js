@@ -3,12 +3,6 @@ const { getDB } = require('../db/database');
 const PRAZO_AUDITORIA = '28/05/2026';
 const HEADER = '🤖 *AGENTE DE OBRAS TWA*\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 
-function progressBar(pct) {
-  const p = pct || 0;
-  const filled = Math.round(p / 10);
-  return '█'.repeat(filled) + '░'.repeat(10 - filled) + ` ${p}%`;
-}
-
 function buildReport() {
   const db = getDB();
   const sep = '━'.repeat(30);
@@ -20,14 +14,19 @@ function buildReport() {
   const data = now.toLocaleDateString('pt-BR', { ...tz, day: '2-digit', month: '2-digit', year: 'numeric' });
   const hora = now.toLocaleTimeString('pt-BR', { ...tz, hour: '2-digit', minute: '2-digit' });
 
-  const concluidas  = db.prepare("SELECT * FROM pendencies WHERE status = 'concluida' ORDER BY id ASC").all();
+  const concluidas  = db.prepare("SELECT * FROM pendencies WHERE status = 'concluida'").all();
   const emValidacao = db.prepare("SELECT * FROM pendencies WHERE status = 'aguardando_validacao'").all();
-  const abertas     = db.prepare(`
-    SELECT * FROM pendencies WHERE status = 'pendente'
-    ORDER BY CASE priority WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END, id ASC
-  `).all();
-
+  const abertas     = db.prepare("SELECT * FROM pendencies WHERE status = 'pendente'").all();
   const total = concluidas.length + emValidacao.length + abertas.length;
+
+  // Responsáveis com abertas (agrupado)
+  const abertasPorResp = {};
+  abertas.forEach(p => {
+    abertasPorResp[p.responsible_name] = (abertasPorResp[p.responsible_name] || 0) + 1;
+  });
+
+  // Responsáveis que concluíram (únicos)
+  const respConcluiram = [...new Set(concluidas.map(p => p.responsible_name))];
 
   let text = HEADER;
   text += `📋 *RELATÓRIO DIÁRIO DE OBRAS*\n`;
@@ -35,52 +34,34 @@ function buildReport() {
   text += `🗓️ ${diaSemana}, ${data}  |  ⏰ ${hora}h\n`;
   text += `${sep}\n\n`;
 
-  // ── Concluídas ────────────────────────────────────────────────────────────
-  text += `✅ *PENDÊNCIAS CONCLUÍDAS — ${concluidas.length} de ${total}*\n\n`;
-  if (concluidas.length > 0) {
-    concluidas.forEach(p => {
-      text += `✅ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n`;
-    });
-  } else {
-    text += `_Nenhuma pendência concluída ainda._\n`;
-  }
-  text += `\n${sep}\n\n`;
-
-  // ── Aguardando validação ──────────────────────────────────────────────────
+  text += `✅ *Concluídas: ${concluidas.length} de ${total}*\n`;
+  text += `🔴 *Em aberto: ${abertas.length} de ${total}*\n`;
   if (emValidacao.length > 0) {
-    text += `⏳ *AGUARDANDO VALIDAÇÃO — ${emValidacao.length}*\n\n`;
-    emValidacao.forEach(p => {
-      text += `⏳ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n`;
-    });
-    text += `\n${sep}\n\n`;
-  }
-
-  // ── Abertas ───────────────────────────────────────────────────────────────
-  const totalAbertas = abertas.length + emValidacao.length;
-  text += `🔴 *PENDÊNCIAS EM ABERTO — ${totalAbertas} de ${total}*\n`;
-  text += `⚠️ _Prazo limite: ${PRAZO_AUDITORIA} — Auditoria Nestlé_\n\n`;
-
-  if (abertas.length > 0) {
-    abertas.forEach(p => {
-      const emoji = p.priority === 'alta' ? '🔴' : p.priority === 'media' ? '🟡' : '🟢';
-      text += `${emoji} *#${p.id}* ${p.title}\n`;
-      text += `   👤 ${p.responsible_name}  ${progressBar(p.progress || 0)}\n`;
-    });
-  } else {
-    text += `_Todas as pendências foram resolvidas!_ 🎉\n`;
+    text += `⏳ *Aguardando validação: ${emValidacao.length}*\n`;
   }
 
   text += `\n${sep}\n\n`;
 
-  // ── Resumo ────────────────────────────────────────────────────────────────
-  text += `📊 *RESUMO GERAL*\n`;
-  text += `┌ Total de pendências: *${total}*\n`;
-  text += `├ ✅ Concluídas: *${concluidas.length}*\n`;
-  if (emValidacao.length > 0) {
-    text += `├ ⏳ Aguardando validação: *${emValidacao.length}*\n`;
+  // Quem concluiu
+  if (respConcluiram.length > 0) {
+    text += `✅ *Responsáveis que concluíram:*\n`;
+    text += respConcluiram.join(' · ') + '\n\n';
   }
-  text += `└ 🔴 Em aberto: *${abertas.length}*\n\n`;
-  text += `_⚙️ Sistema TWA de Gestão de Obras · Relatório automático_`;
+
+  // Quem tem abertos
+  if (Object.keys(abertasPorResp).length > 0) {
+    text += `🔴 *Responsáveis com pendências abertas:*\n`;
+    Object.entries(abertasPorResp).forEach(([nome, qtd]) => {
+      text += `• ${nome} — ${qtd} item(s)\n`;
+    });
+    text += '\n';
+  } else {
+    text += `🎉 *Todas as pendências foram resolvidas!*\n\n`;
+  }
+
+  text += `${sep}\n`;
+  text += `⚠️ _Prazo final: ${PRAZO_AUDITORIA} — Auditoria Nestlé_\n`;
+  text += `_⚙️ Sistema TWA de Gestão de Obras_`;
 
   return text;
 }
