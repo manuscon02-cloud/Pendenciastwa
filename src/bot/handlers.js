@@ -272,6 +272,58 @@ async function handleMessage(msg) {
     return;
   }
 
+  // ── #relatorio ────────────────────────────────────────────────────────────
+  if (body === '#relatorio') {
+    const sep = '━'.repeat(25);
+    const now = new Date();
+    const tz = { timeZone: 'America/Sao_Paulo' };
+    const data = now.toLocaleDateString('pt-BR', { ...tz, day: '2-digit', month: '2-digit', year: 'numeric' });
+    const hora = now.toLocaleTimeString('pt-BR', { ...tz, hour: '2-digit', minute: '2-digit' });
+
+    const concluidas  = db.prepare("SELECT * FROM pendencies WHERE status = 'concluida' ORDER BY completed_at DESC").all();
+    const emValidacao = db.prepare("SELECT * FROM pendencies WHERE status = 'aguardando_validacao'").all();
+    const abertas     = db.prepare(`
+      SELECT * FROM pendencies WHERE status = 'pendente'
+      ORDER BY CASE priority WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END, deadline ASC
+    `).all();
+
+    let text = `📋 *RELATÓRIO DO DIA — ${data}  |  ⏰ ${hora}*\n${sep}\n\n`;
+
+    if (concluidas.length > 0) {
+      text += `✅ *CONCLUÍDAS (${concluidas.length}):*\n\n`;
+      concluidas.forEach(p => {
+        text += `✅ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n\n`;
+      });
+      text += `${sep}\n\n`;
+    } else {
+      text += `✅ *CONCLUÍDAS: nenhuma ainda*\n\n${sep}\n\n`;
+    }
+
+    if (emValidacao.length > 0) {
+      text += `⏳ *AGUARDANDO VALIDAÇÃO (${emValidacao.length}):*\n\n`;
+      emValidacao.forEach(p => {
+        text += `⏳ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n\n`;
+      });
+      text += `${sep}\n\n`;
+    }
+
+    if (abertas.length > 0) {
+      text += `🔴 *ABERTAS (${abertas.length}):*\n\n`;
+      abertas.forEach(p => {
+        const emoji = p.priority === 'alta' ? '🔴' : p.priority === 'media' ? '🟡' : '🟢';
+        text += `${emoji} *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}  ${progressBar(p.progress || 0)}\n\n`;
+      });
+      text += `${sep}\n\n`;
+    }
+
+    const total = concluidas.length + emValidacao.length + abertas.length;
+    text += `📊 *Total: ${total}* | ✅ ${concluidas.length} concluída(s) | ⏳ ${emValidacao.length} em validação | 🔴 ${abertas.length} aberta(s)\n`;
+    text += `_⚙️ Relatório automático · Sistema TWA de Gestão de Obras_`;
+
+    await rply(msg, text);
+    return;
+  }
+
   // ── #meuid ───────────────────────────────────────────────────────────────
   if (body === '#meuid') {
     await rply(msg, `Seu ID: *${senderPhone}*`);
@@ -288,7 +340,8 @@ async function handleMessage(msg) {
       `   A=0% · B=25% · C=50% · D=75% · E=100%\n` +
       `   Exemplo: *1C* = item 1 em 50%\n` +
       `✅ *#feito [número]* → marcar item como concluído\n` +
-      `📊 *#status* → ver todas as pendências abertas\n\n` +
+      `📊 *#status* → ver todas as pendências abertas\n` +
+      `📋 *#relatorio* → relatório do dia (concluídas + abertas)\n\n` +
       `*Somente ${validatorNames}:*\n` +
       `✅ *[número]E* → encerrar pendência imediatamente\n\n` +
       `❓ *#ajuda* → esta mensagem`

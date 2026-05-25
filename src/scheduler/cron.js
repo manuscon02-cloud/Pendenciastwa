@@ -99,6 +99,78 @@ function buildMessage(pendencies, concluidas) {
   return { text, mentions };
 }
 
+function buildReport(db) {
+  const sep = '━'.repeat(25);
+  const now = new Date();
+  const tz = { timeZone: 'America/Sao_Paulo' };
+  const data = now.toLocaleDateString('pt-BR', { ...tz, day: '2-digit', month: '2-digit', year: 'numeric' });
+  const hora = now.toLocaleTimeString('pt-BR', { ...tz, hour: '2-digit', minute: '2-digit' });
+
+  const concluidas  = db.prepare("SELECT * FROM pendencies WHERE status = 'concluida' ORDER BY completed_at DESC").all();
+  const emValidacao = db.prepare("SELECT * FROM pendencies WHERE status = 'aguardando_validacao'").all();
+  const abertas     = db.prepare(`
+    SELECT * FROM pendencies WHERE status = 'pendente'
+    ORDER BY CASE priority WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END, deadline ASC
+  `).all();
+
+  let text = HEADER;
+  text += `📋 *RELATÓRIO DO DIA — ${data}  |  ⏰ ${hora}*\n${sep}\n\n`;
+
+  if (concluidas.length > 0) {
+    text += `✅ *CONCLUÍDAS (${concluidas.length}):*\n\n`;
+    concluidas.forEach(p => {
+      text += `✅ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n\n`;
+    });
+    text += `${sep}\n\n`;
+  } else {
+    text += `✅ *CONCLUÍDAS: nenhuma ainda*\n\n${sep}\n\n`;
+  }
+
+  if (emValidacao.length > 0) {
+    text += `⏳ *AGUARDANDO VALIDAÇÃO (${emValidacao.length}):*\n\n`;
+    emValidacao.forEach(p => {
+      text += `⏳ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n\n`;
+    });
+    text += `${sep}\n\n`;
+  }
+
+  if (abertas.length > 0) {
+    text += `🔴 *ABERTAS (${abertas.length}):*\n\n`;
+    abertas.forEach(p => {
+      const emoji = p.priority === 'alta' ? '🔴' : p.priority === 'media' ? '🟡' : '🟢';
+      text += `${emoji} *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}  ${progressBar(p.progress || 0)}\n\n`;
+    });
+    text += `${sep}\n\n`;
+  }
+
+  const total = concluidas.length + emValidacao.length + abertas.length;
+  text += `📊 *Total: ${total}* | ✅ ${concluidas.length} concluída(s) | ⏳ ${emValidacao.length} em validação | 🔴 ${abertas.length} aberta(s)\n`;
+  text += `_⚙️ Relatório automático · Sistema TWA de Gestão de Obras_`;
+
+  return text;
+}
+
+async function sendDailyReport() {
+  if (!isClientReady()) {
+    console.log('⚠️ WhatsApp offline. Relatório pulado.');
+    return;
+  }
+
+  const db = getDB();
+  const cfg = db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get();
+  if (!cfg) {
+    console.log('⚠️ Nenhum grupo configurado. Relatório cancelado.');
+    return;
+  }
+
+  try {
+    await sendMessage(cfg.value, buildReport(db), []);
+    console.log('📊 Relatório diário enviado.');
+  } catch (err) {
+    console.error('❌ Erro ao enviar relatório:', err.message);
+  }
+}
+
 async function sendReminders() {
   if (!isClientReady()) {
     console.log('⚠️ WhatsApp offline. Cobrança pulada.');
@@ -174,7 +246,14 @@ function initScheduler() {
     console.log(`📅 Agendado: ${s.hour}:${String(s.minute).padStart(2, '0')} (todos os dias)`);
   });
 
-  console.log(`✅ ${schedules.length} horário(s) agendado(s)`);
+  // Relatório diário fixo às 17:30
+  const reportJob = cron.schedule('30 17 * * *', async () => {
+    console.log('📊 Enviando relatório diário 17:30...');
+    await sendDailyReport();
+  }, { timezone: 'America/Sao_Paulo' });
+  jobs.push(reportJob);
+
+  console.log(`✅ ${schedules.length} horário(s) de cobrança + relatório diário 17:30`);
 }
 
-module.exports = { initScheduler, sendReminders };
+module.exports = { initScheduler, sendReminders, sendDailyReport };
