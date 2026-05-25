@@ -1,5 +1,6 @@
 const { getDB } = require('../db/database');
 const { add: bufferAdd } = require('./updateBuffer');
+const { buildReport } = require('./reportBuilder');
 
 const HEADER = '🤖 *AGENTE DE OBRAS TWA*\n━━━━━━━━━━━━━━━━━━━━━━━━━\n';
 const rply = (m, t) => m.reply(HEADER + t);
@@ -274,53 +275,7 @@ async function handleMessage(msg) {
 
   // ── #relatorio ────────────────────────────────────────────────────────────
   if (body === '#relatorio' || body === '#relatório') {
-    const sep = '━'.repeat(25);
-    const now = new Date();
-    const tz = { timeZone: 'America/Sao_Paulo' };
-    const data = now.toLocaleDateString('pt-BR', { ...tz, day: '2-digit', month: '2-digit', year: 'numeric' });
-    const hora = now.toLocaleTimeString('pt-BR', { ...tz, hour: '2-digit', minute: '2-digit' });
-
-    const concluidas  = db.prepare("SELECT * FROM pendencies WHERE status = 'concluida' ORDER BY completed_at DESC").all();
-    const emValidacao = db.prepare("SELECT * FROM pendencies WHERE status = 'aguardando_validacao'").all();
-    const abertas     = db.prepare(`
-      SELECT * FROM pendencies WHERE status = 'pendente'
-      ORDER BY CASE priority WHEN 'alta' THEN 1 WHEN 'media' THEN 2 ELSE 3 END, deadline ASC
-    `).all();
-
-    let text = `📋 *RELATÓRIO DO DIA — ${data}  |  ⏰ ${hora}*\n${sep}\n\n`;
-
-    if (concluidas.length > 0) {
-      text += `✅ *CONCLUÍDAS (${concluidas.length}):*\n\n`;
-      concluidas.forEach(p => {
-        text += `✅ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n\n`;
-      });
-      text += `${sep}\n\n`;
-    } else {
-      text += `✅ *CONCLUÍDAS: nenhuma ainda*\n\n${sep}\n\n`;
-    }
-
-    if (emValidacao.length > 0) {
-      text += `⏳ *AGUARDANDO VALIDAÇÃO (${emValidacao.length}):*\n\n`;
-      emValidacao.forEach(p => {
-        text += `⏳ *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}\n\n`;
-      });
-      text += `${sep}\n\n`;
-    }
-
-    if (abertas.length > 0) {
-      text += `🔴 *ABERTAS (${abertas.length}):*\n\n`;
-      abertas.forEach(p => {
-        const emoji = p.priority === 'alta' ? '🔴' : p.priority === 'media' ? '🟡' : '🟢';
-        text += `${emoji} *#${p.id}* ${p.title}\n   👤 ${p.responsible_name}  ${progressBar(p.progress || 0)}\n\n`;
-      });
-      text += `${sep}\n\n`;
-    }
-
-    const total = concluidas.length + emValidacao.length + abertas.length;
-    text += `📊 *Total: ${total}* | ✅ ${concluidas.length} concluída(s) | ⏳ ${emValidacao.length} em validação | 🔴 ${abertas.length} aberta(s)\n`;
-    text += `_⚙️ Relatório automático · Sistema TWA de Gestão de Obras_`;
-
-    await rply(msg, text);
+    await rply(msg, buildReport());
     return;
   }
 
