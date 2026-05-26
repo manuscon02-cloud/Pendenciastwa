@@ -35,35 +35,25 @@ function seedPendencies(db) {
   };
   const DL = '2026-05-28';
 
+  // Apenas as pendências ativas — com status e progresso já definidos
   const rows = [
-    ['Identificar quadro elétrico com carômetro',                        'Foto do eletricista responsável da empresa comprovando identificação',               'Gaspar',       PHONES.gaspar,       'alta'],
-    ['Providenciar abrigo para produtos químicos',                        'Vagner vai fabricar o abrigo',                                                       'Vagner',       PHONES.vagner,       'alta'],
-    ['Providenciar copos individuais e identificar',                      'Fazer solicitação de compras',                                                        'Compras',      PHONES.compras,      'media'],
-    ['Fixar cilindros de gases em dois pontos (manual SHE pg.74)',        'Fixação obrigatória em dois pontos conforme manual SHE página 74',                   'Almoxarifado', PHONES.almoxarifado, 'alta'],
-    ['Providenciar trancas para escadas manuais fora de uso',             'Escadas que não estiverem em uso devem ser trancadas',                               'Almoxarifado', PHONES.almoxarifado, 'media'],
-    ['Providenciar iluminação para container almoxarifado e tenda',       'Iluminação adequada nos dois locais',                                                 'Almoxarifado', PHONES.almoxarifado, 'media'],
-    ['Sinalizar desnível entre degrau e entrada dos containers',          'Sinalização de segurança obrigatória',                                                'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Adequação da altura dos lavatórios (NR18 – pias a 0,90m)',          'Regularizar conforme NR18 – altura 0,90m',                                           'Gaspar',       PHONES.gaspar,       'alta'],
-    ['Conferir todos os pontos de tomadas e identificar tensão',          'Verificar e identificar a tensão de cada tomada',                                    'Almoxarifado', PHONES.almoxarifado, 'media'],
-    ['Providenciar laudo de aterramento dos containers',                  'Documento técnico obrigatório',                                                       'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Providenciar laudo de habitabilidade dos containers marítimos',     'Documento técnico obrigatório para containers marítimos',                             'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Providenciar PGR atualizado para atender NR18',                     'Atualização obrigatória do PGR conforme NR18',                                        'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Providenciar e posicionar placas de rota de fuga',                  'Placas de emergência no canteiro de obras',                                           'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Providenciar Projeto da área de vivência com ART e anexar ao PGR', 'Responsáveis: Arnaldo (lead) e Lucas',                                                'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Providenciar Projeto elétrico do canteiro com ART',                 'Projeto elétrico completo com Anotação de Responsabilidade Técnica',                  'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Providenciar local específico para guarda de EPIs novos e usados',  'Separação e organização de EPIs novos e usados',                                      'Almoxarifado', PHONES.almoxarifado, 'media'],
-    ['Adquirir coletor para descarte de materiais não recicláveis',       'Coletor específico para resíduos não recicláveis',                                    'Almoxarifado', PHONES.almoxarifado, 'media'],
-    ['Realizar nivelamento da área do canteiro',                          'Existe desnível significativo – verificando solução com a Nestlé',                   'Nestle/Coord', PHONES.nestle,       'baixa'],
-    ['Fornecer e evidenciar entrega de palmilhas antiperfurantes',        'Para todos os colaboradores – evidência de entrega obrigatória',                      'Arnaldo',      PHONES.arnaldo,      'alta'],
-    ['Realizar adequação de bancada conforme manual SHE',                 'Vagner iniciou a fabricação – aguardando conclusão',                                  'Vagner',       PHONES.vagner,       'media'],
+    // [title, desc, name, phone, priority, status, progress]
+    ['Sinalizar desnível entre degrau e entrada dos containers',          'Sinalização de segurança obrigatória',                                'Arnaldo', PHONES.arnaldo, 'alta',  'pendente',  0  ],
+    ['Providenciar laudo de aterramento dos containers',                  'Documento técnico obrigatório',                                       'Arnaldo', PHONES.arnaldo, 'alta',  'pendente',  75 ],
+    ['Providenciar PGR atualizado para atender NR18',                     'Atualização obrigatória do PGR conforme NR18',                        'Arnaldo', PHONES.arnaldo, 'alta',  'pendente',  75 ],
+    ['Providenciar e posicionar placas de rota de fuga',                  'Placas de emergência no canteiro de obras',                           'Arnaldo', PHONES.arnaldo, 'alta',  'pendente',  0  ],
+    ['Providenciar Projeto da área de vivência com ART e anexar ao PGR', 'Responsáveis: Arnaldo (lead) e Lucas',                                'Arnaldo', PHONES.arnaldo, 'alta',  'concluida', 100],
+    ['Providenciar Projeto elétrico do canteiro com ART',                 'Projeto elétrico completo com Anotação de Responsabilidade Técnica',  'Arnaldo', PHONES.arnaldo, 'alta',  'pendente',  50 ],
+    ['Realizar nivelamento da área do canteiro',                          'Existe desnível significativo – verificando solução com a Nestlé',   'Nestle/Coord', PHONES.nestle, 'baixa', 'pendente', 0],
   ];
 
+  const now = new Date().toISOString();
   const stmt = db.prepare(
-    'INSERT INTO pendencies (title, description, responsible_name, responsible_phone, deadline, priority) VALUES (?, ?, ?, ?, ?, ?)'
+    'INSERT INTO pendencies (title, description, responsible_name, responsible_phone, deadline, priority, status, progress, progress_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
   db.transaction(list => {
-    for (const [title, desc, name, phone, priority] of list)
-      stmt.run(title, desc, name, phone, DL, priority);
+    for (const [title, desc, name, phone, priority, status, progress] of list)
+      stmt.run(title, desc, name, phone, DL, priority, status, progress, progress > 0 ? now : null);
   })(rows);
 
   db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(
