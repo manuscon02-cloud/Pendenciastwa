@@ -145,7 +145,8 @@ router.post('/pendencies', (req, res) => {
 
 router.put('/pendencies/:id', (req, res) => {
   const db = getDB();
-  const { title, description, responsible_name, responsible_phone, deadline, priority, status } = req.body;
+  const { title, description, responsible_name, responsible_phone, deadline, priority, status, progress } = req.body;
+  const now = new Date().toISOString();
   db.prepare(`
     UPDATE pendencies SET
       title = COALESCE(?, title),
@@ -154,9 +155,12 @@ router.put('/pendencies/:id', (req, res) => {
       responsible_phone = COALESCE(?, responsible_phone),
       deadline = COALESCE(?, deadline),
       priority = COALESCE(?, priority),
-      status = COALESCE(?, status)
+      status = COALESCE(?, status),
+      progress = COALESCE(?, progress),
+      progress_updated_at = CASE WHEN ? IS NOT NULL THEN ? ELSE progress_updated_at END,
+      completed_at = CASE WHEN ? = 'concluida' AND completed_at IS NULL THEN datetime('now','localtime') ELSE completed_at END
     WHERE id = ?
-  `).run(title, description, responsible_name, responsible_phone, deadline, priority, status, req.params.id);
+  `).run(title, description, responsible_name, responsible_phone, deadline, priority, status, progress, progress, now, status, req.params.id);
   res.json(db.prepare('SELECT * FROM pendencies WHERE id = ?').get(req.params.id));
 });
 
