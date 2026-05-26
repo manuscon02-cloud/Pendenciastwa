@@ -49,6 +49,14 @@ function resolveSender(sender, db) {
 }
 
 async function handleMessage(msg) {
+  try {
+    return await _handleMessage(msg);
+  } catch (err) {
+    console.error('❌ Erro no handleMessage:', err.message, err.stack);
+  }
+}
+
+async function _handleMessage(msg) {
   const db = getDB();
 
   if (!msg.from.includes('@g.us')) return;

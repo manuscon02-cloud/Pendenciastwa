@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getDB } = require('../db/database');
 const { getGroups, getQRCode, isClientReady } = require('../bot/whatsapp');
-const { initScheduler, sendReminders } = require('../scheduler/cron');
+const { initScheduler, sendReminders, sendDailyReport } = require('../scheduler/cron');
 
 // ── STATUS ──────────────────────────────────────────────────────────────────
 router.get('/status', (req, res) => {
@@ -182,6 +182,15 @@ router.post('/trigger', async (req, res) => {
   try {
     await sendReminders();
     res.json({ success: true, message: 'Cobrança enviada com sucesso!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/trigger-report', async (req, res) => {
+  try {
+    await sendDailyReport();
+    res.json({ success: true, message: 'Relatório enviado com sucesso!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
