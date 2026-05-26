@@ -68,6 +68,9 @@ async function _handleMessage(msg) {
   const senderPhone = senderRaw.replace(/@c\.us$/, '').replace(/@lid$/, '');
   if (!senderPhone) return;
 
+  // Resolve LID → telefone real uma vez, usado em todas as verificações
+  const effectiveSenderPhone = resolveSender(senderPhone, db);
+
   const rawBody = (msg.body || '').trim();
   const body = rawBody.toLowerCase();
 
@@ -83,7 +86,7 @@ async function _handleMessage(msg) {
     const nowIso = new Date().toISOString();
 
     // 1º — Validador: autonomia total e irrestrita
-    if (isValidator(db, senderPhone)) {
+    if (isValidator(db, effectiveSenderPhone)) {
       const pendency = db.prepare(
         "SELECT * FROM pendencies WHERE id = ? AND status != 'concluida'"
       ).get(pendencyId);
@@ -97,7 +100,7 @@ async function _handleMessage(msg) {
         return;
       }
 
-      const validatorName = getValidatorName(db, senderPhone);
+      const validatorName = getValidatorName(db, effectiveSenderPhone);
 
       if (letter === 'E') {
         db.prepare(`
@@ -153,8 +156,7 @@ async function _handleMessage(msg) {
     }
 
     // 3º — Não é responsável e não é validador: bloqueado
-    const effectivePhone = resolveSender(senderPhone, db);
-    if (!phoneMatch(effectivePhone, pendency.responsible_phone)) {
+    if (!phoneMatch(effectiveSenderPhone, pendency.responsible_phone)) {
       await rply(msg,
         `⛔ Você não é o responsável pela pendência *#${pendencyId}*.\n` +
         `Apenas *${pendency.responsible_name}* pode atualizar esta pendência.`
@@ -223,8 +225,7 @@ async function _handleMessage(msg) {
       return;
     }
 
-    const effectivePhone = resolveSender(senderPhone, db);
-    if (!phoneMatch(effectivePhone, pendency.responsible_phone)) {
+    if (!phoneMatch(effectiveSenderPhone, pendency.responsible_phone)) {
       await rply(msg, `⛔ Apenas *${pendency.responsible_name}* pode marcar esta pendência.`);
       return;
     }
