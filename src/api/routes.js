@@ -210,29 +210,31 @@ router.post('/trigger-report', async (req, res) => {
   }
 });
 
-// ── ADMIN: baixa manual via URL (sem precisar do console) ────────────────────
+// ── ADMIN: fix completo via URL ───────────────────────────────────────────────
 router.get('/admin/fix', (req, res) => {
   const db = getDB();
   const now = new Date().toISOString();
+  const MANTER = [7, 10, 12, 13, 15, 18];
 
+  // Deleta tudo que não é uma das 6 pendências válidas
+  const todas = db.prepare('SELECT id FROM pendencies').all().map(r => r.id);
+  const deletar = todas.filter(id => !MANTER.includes(id));
+  deletar.forEach(id => db.prepare('DELETE FROM pendencies WHERE id = ?').run(id));
+
+  // Aplica progresso nas 3 confirmadas (14E aguarda confirmação se é #13)
   const updates = [
-    { id: 14, progress: 100, status: 'concluida' },
-    { id: 12, progress: 75,  status: 'pendente'  },
-    { id: 10, progress: 75,  status: 'pendente'  },
-    { id: 15, progress: 50,  status: 'pendente'  },
+    { id: 12, progress: 75, status: 'pendente' },
+    { id: 10, progress: 75, status: 'pendente' },
+    { id: 15, progress: 50, status: 'pendente' },
   ];
-
   const stmt = db.prepare(`
-    UPDATE pendencies SET progress = ?, progress_updated_at = ?, status = ?,
-    completed_at = CASE WHEN ? = 'concluida' AND completed_at IS NULL THEN datetime('now','localtime') ELSE completed_at END
-    WHERE id = ?
+    UPDATE pendencies SET progress = ?, progress_updated_at = ?, status = ? WHERE id = ?
   `);
-
-  const results = [];
+  const atualizados = [];
   for (const { id, progress, status } of updates) {
-    stmt.run(progress, now, status, status, id);
+    stmt.run(progress, now, status, id);
     const p = db.prepare('SELECT id, title, progress, status FROM pendencies WHERE id = ?').get(id);
-    results.push(p || { id, error: 'não encontrado' });
+    if (p) atualizados.push(p);
   }
 
   // LID do Arnaldo
@@ -242,15 +244,8 @@ router.get('/admin/fix', (req, res) => {
   lidMap['44422897131630'] = '16988188987';
   db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('lid_phone_map', ?)").run(JSON.stringify(lidMap));
 
-  res.json({ ok: true, atualizados: results, lid_arnaldo: 'mapeado' });
-});
-
-router.get('/admin/deletar/:ids', (req, res) => {
-  const db = getDB();
-  const ids = req.params.ids.split(',').map(Number).filter(Boolean);
-  ids.forEach(id => db.prepare('DELETE FROM pendencies WHERE id = ?').run(id));
-  const total = db.prepare('SELECT COUNT(*) as c FROM pendencies').get().c;
-  res.json({ ok: true, deletados: ids, total_restante: total });
+  const restantes = db.prepare('SELECT id, title, progress, status FROM pendencies ORDER BY id').all();
+  res.json({ ok: true, deletados: deletar, atualizados, lid_arnaldo: 'mapeado', pendencias_restantes: restantes });
 });
 
 // ── LOGS ──────────────────────────────────────────────────────────────────────
