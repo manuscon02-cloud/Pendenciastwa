@@ -21,13 +21,9 @@ function getDB() {
 
 function seedPendencies(db) {
   const { c } = db.prepare('SELECT COUNT(*) as c FROM pendencies').get();
-  if (c >= 20) { console.log(`📋 Banco: ${c} pendência(s) já existentes`); return; }
+  if (c > 0) { console.log(`📋 Banco: ${c} pendência(s) já existentes`); return; }
 
-  if (c > 0) {
-    console.log(`⚠️ Banco incompleto (${c} de 20) — inserindo pendências faltantes...`);
-  } else {
-    console.log('🌱 Banco vazio — populando automaticamente...');
-  }
+  console.log('🌱 Banco vazio — populando automaticamente...');
 
   const PHONES = {
     gaspar:       '16997868778',
@@ -62,18 +58,12 @@ function seedPendencies(db) {
     ['Realizar adequação de bancada conforme manual SHE',                 'Vagner iniciou a fabricação – aguardando conclusão',                                  'Vagner',       PHONES.vagner,       'media'],
   ];
 
-  const check = db.prepare('SELECT COUNT(*) as c FROM pendencies WHERE title = ?');
-  const stmt  = db.prepare(
+  const stmt = db.prepare(
     'INSERT INTO pendencies (title, description, responsible_name, responsible_phone, deadline, priority) VALUES (?, ?, ?, ?, ?, ?)'
   );
-  let inserted = 0;
   db.transaction(list => {
-    for (const [title, desc, name, phone, priority] of list) {
-      if (check.get(title).c === 0) {
-        stmt.run(title, desc, name, phone, DL, priority);
-        inserted++;
-      }
-    }
+    for (const [title, desc, name, phone, priority] of list)
+      stmt.run(title, desc, name, phone, DL, priority);
   })(rows);
 
   db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('validators', ?)").run(
@@ -83,7 +73,7 @@ function seedPendencies(db) {
     ])
   );
 
-  console.log(`✅ ${inserted} pendência(s) inserida(s) + validadores atualizados`);
+  console.log('✅ 20 pendências + validadores inseridos');
 }
 
 function initDB() {
