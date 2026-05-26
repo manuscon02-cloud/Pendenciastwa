@@ -210,6 +210,49 @@ router.post('/trigger-report', async (req, res) => {
   }
 });
 
+// ── ADMIN: baixa manual via URL (sem precisar do console) ────────────────────
+router.get('/admin/fix', (req, res) => {
+  const db = getDB();
+  const now = new Date().toISOString();
+
+  const updates = [
+    { id: 14, progress: 100, status: 'concluida' },
+    { id: 12, progress: 75,  status: 'pendente'  },
+    { id: 10, progress: 75,  status: 'pendente'  },
+    { id: 15, progress: 50,  status: 'pendente'  },
+  ];
+
+  const stmt = db.prepare(`
+    UPDATE pendencies SET progress = ?, progress_updated_at = ?, status = ?,
+    completed_at = CASE WHEN ? = 'concluida' AND completed_at IS NULL THEN datetime('now','localtime') ELSE completed_at END
+    WHERE id = ?
+  `);
+
+  const results = [];
+  for (const { id, progress, status } of updates) {
+    stmt.run(progress, now, status, status, id);
+    const p = db.prepare('SELECT id, title, progress, status FROM pendencies WHERE id = ?').get(id);
+    results.push(p || { id, error: 'não encontrado' });
+  }
+
+  // LID do Arnaldo
+  const lidRow = db.prepare("SELECT value FROM bot_config WHERE key = 'lid_phone_map'").get();
+  let lidMap = {};
+  try { lidMap = JSON.parse(lidRow?.value || '{}'); } catch {}
+  lidMap['44422897131630'] = '16988188987';
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('lid_phone_map', ?)").run(JSON.stringify(lidMap));
+
+  res.json({ ok: true, atualizados: results, lid_arnaldo: 'mapeado' });
+});
+
+router.get('/admin/deletar/:ids', (req, res) => {
+  const db = getDB();
+  const ids = req.params.ids.split(',').map(Number).filter(Boolean);
+  ids.forEach(id => db.prepare('DELETE FROM pendencies WHERE id = ?').run(id));
+  const total = db.prepare('SELECT COUNT(*) as c FROM pendencies').get().c;
+  res.json({ ok: true, deletados: ids, total_restante: total });
+});
+
 // ── LOGS ──────────────────────────────────────────────────────────────────────
 router.get('/logs', (req, res) => {
   const logs = getDB().prepare(`
