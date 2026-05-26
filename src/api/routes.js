@@ -90,6 +90,16 @@ router.post('/lid-map', (req, res) => {
   res.json(map);
 });
 
+router.delete('/lid-map/:lid', (req, res) => {
+  const db = getDB();
+  const row = db.prepare("SELECT value FROM bot_config WHERE key = 'lid_phone_map'").get();
+  let map = {};
+  try { map = JSON.parse(row?.value || '{}'); } catch {}
+  delete map[req.params.lid];
+  db.prepare("INSERT OR REPLACE INTO bot_config (key, value) VALUES ('lid_phone_map', ?)").run(JSON.stringify(map));
+  res.json(map);
+});
+
 // ── GRUPOS ───────────────────────────────────────────────────────────────────
 router.get('/groups', async (req, res) => {
   try {

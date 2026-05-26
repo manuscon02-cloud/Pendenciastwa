@@ -419,6 +419,34 @@
       </div>
     </div>
 
+    <!-- Mapa LID → Telefone -->
+    <div class="card">
+      <div class="card-title">🔗 Mapa LID → Telefone</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">
+        Alguns usuários do WhatsApp aparecem com LID (número longo) em vez de telefone. Registre aqui para o bot reconhecê-los.
+        Use <code style="background:var(--surface2);padding:.1rem .4rem;border-radius:4px">#meuid</code> no grupo para descobrir o LID de alguém.
+      </p>
+      <template x-for="[lid, phone] in Object.entries(lidMap)" :key="lid">
+        <div class="schedule-item">
+          <div>
+            <div style="font-size:.75rem;color:var(--muted)">LID: <span style="color:var(--text);font-family:monospace" x-text="lid"></span></div>
+            <div style="font-size:.75rem;color:var(--muted)">Tel: <span style="color:var(--green);font-family:monospace" x-text="phone"></span></div>
+          </div>
+          <button class="btn btn-red" @click="removeLid(lid)">🗑️</button>
+        </div>
+      </template>
+      <template x-if="Object.keys(lidMap).length === 0">
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">Nenhum mapeamento cadastrado.</p>
+      </template>
+      <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap">
+        <input type="text" x-model="newLid.lid" placeholder="LID (ex: 44422897131630)"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem;border-radius:8px;font-size:.85rem;flex:2;min-width:160px" />
+        <input type="tel" x-model="newLid.phone" placeholder="Telefone (ex: 16988188987)"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:.5rem;border-radius:8px;font-size:.85rem;flex:1;min-width:140px" />
+        <button class="btn btn-primary" @click="addLid()">+ Adicionar</button>
+      </div>
+    </div>
+
     <!-- Grupo WhatsApp -->
     <div class="card">
       <div class="card-title">📱 Grupo WhatsApp</div>
@@ -503,6 +531,8 @@ function app() {
     schedules: [],
     validators: [],
     newValidator: { name: '', phone: '' },
+    lidMap: {},
+    newLid: { lid: '', phone: '' },
     newTime: '09:00',
     toast: { show: false, msg: '' },
     modal: { show: false, editing: false, id: null },
@@ -546,6 +576,7 @@ function app() {
     async loadConfig() {
       await this.loadSchedules();
       await this.loadValidators();
+      await this.loadLidMap();
       if (this.status.whatsapp) await this.loadGroups();
     },
 
@@ -577,6 +608,31 @@ function app() {
       const r = await fetch(`/api/validators/${phone}`, { method: 'DELETE' });
       this.validators = await r.json();
       this.showToast('🗑️ Validador removido');
+    },
+
+    async loadLidMap() {
+      const r = await fetch('/api/lid-map');
+      this.lidMap = await r.json();
+    },
+
+    async addLid() {
+      if (!this.newLid.lid || !this.newLid.phone) {
+        this.showToast('⚠️ Preencha LID e telefone'); return;
+      }
+      await fetch('/api/lid-map', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.newLid)
+      });
+      this.newLid = { lid: '', phone: '' };
+      await this.loadLidMap();
+      this.showToast('✅ LID mapeado!');
+    },
+
+    async removeLid(lid) {
+      await fetch(`/api/lid-map/${lid}`, { method: 'DELETE' });
+      await this.loadLidMap();
+      this.showToast('🗑️ LID removido');
     },
 
     async manualValidate(id) {
