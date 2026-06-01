@@ -19,7 +19,7 @@ app.use('/uploads', express.static(
 ));
 app.use('/api', routes);
 
-app.get('*', (_, res) =>
+app.get('/', (_, res) =>
   res.sendFile(path.join(__dirname, '../public/index.html'))
 );
 
