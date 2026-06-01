@@ -53,6 +53,20 @@ async function initWhatsApp(messageHandler) {
     console.log(`📁 Diretório de autenticação criado: ${authPath}`);
   } else {
     console.log(`📁 Usando diretório de autenticação: ${authPath}`);
+
+    // Limpar locks do Chromium (arquivos SingletonLock/Cookie)
+    try {
+      const lockFiles = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
+      lockFiles.forEach(file => {
+        const lockPath = path.join(authPath, 'session', file);
+        if (fs.existsSync(lockPath)) {
+          fs.unlinkSync(lockPath);
+          console.log(`🔓 Lock removido: ${file}`);
+        }
+      });
+    } catch (err) {
+      console.log('⚠️  Não foi possível remover locks:', err.message);
+    }
   }
 
   client = new Client({
