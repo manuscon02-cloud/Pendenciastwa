@@ -79,10 +79,7 @@ class GoogleSheetsService {
   }
 
   async getGestaoCompartilhada(spreadsheetId) {
-    const sheetNames = await this.listSheetNames(spreadsheetId);
-    console.log('📋 Abas disponíveis:', sheetNames);
-
-    const rows = await this.readSheet(spreadsheetId, "GESTÃO COMPARTILHADA!A4:N1000");
+    const rows = await this.readSheet(spreadsheetId, "'Ocorrências e Ações'!A4:N1000");
 
     if (rows.length === 0) return [];
 
