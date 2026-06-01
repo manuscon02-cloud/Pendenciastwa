@@ -60,8 +60,29 @@ class GoogleSheetsService {
     }
   }
 
+  async listSheetNames(spreadsheetId) {
+    try {
+      if (!this.sheets) {
+        await this.authenticate();
+      }
+
+      const response = await this.sheets.spreadsheets.get({
+        spreadsheetId,
+      });
+
+      const sheets = response.data.sheets || [];
+      return sheets.map(sheet => sheet.properties.title);
+    } catch (error) {
+      console.error('❌ Erro ao listar abas:', error.message);
+      return [];
+    }
+  }
+
   async getGestaoCompartilhada(spreadsheetId) {
-    const rows = await this.readSheet(spreadsheetId, "'GESTÃO COMPARTILHADA'!A4:N1000");
+    const sheetNames = await this.listSheetNames(spreadsheetId);
+    console.log('📋 Abas disponíveis:', sheetNames);
+
+    const rows = await this.readSheet(spreadsheetId, "GESTÃO COMPARTILHADA!A4:N1000");
 
     if (rows.length === 0) return [];
 
