@@ -8,3 +8,5 @@ public/uploads/*
 *.db-wal
 *.db-shm
 google-credentials.json
+RAILWAY-GOOGLE-CREDENTIALS.txt
+CRIAR-VOLUMES.md

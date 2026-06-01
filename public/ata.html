@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Configuração Ata - Google Sheets</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
 <style>
   :root {
     --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
@@ -24,13 +23,13 @@
 
   .form-group { margin-bottom: 1.25rem; }
   .form-group label { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: .5rem; }
-  .form-group input, .form-group select {
+  .form-group input {
     width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
     padding: .75rem; color: var(--text); font-size: .9rem; outline: none;
   }
   .form-group input:focus { border-color: var(--accent); }
 
-  .toggle { display: flex; align-items: center; gap: .75rem; }
+  .toggle { display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; }
   .toggle input[type="checkbox"] {
     width: 48px; height: 28px; appearance: none; background: var(--surface2);
     border: 1px solid var(--border); border-radius: 999px; position: relative; cursor: pointer;
@@ -43,37 +42,40 @@
   }
   .toggle input[type="checkbox"]:checked::before { left: 23px; }
 
-  .btn { padding: .6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-size: .9rem; font-weight: 600; transition: opacity .15s; }
-  .btn:hover { opacity: .85; }
+  .btn { padding: .75rem 1.5rem; border-radius: 8px; border: none; cursor: pointer; font-size: .9rem; font-weight: 600; transition: opacity .15s; }
+  .btn:hover:not(:disabled) { opacity: .85; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
   .btn-primary { background: var(--accent); color: #fff; }
-  .btn-green { background: #14532d; color: var(--green); }
+  .btn-green { background: var(--green); color: #fff; }
   .btn-ghost { background: var(--surface2); color: var(--text); }
 
-  .group-list { display: flex; flex-direction: column; gap: .5rem; max-height: 300px; overflow-y: auto; }
+  .group-list { display: flex; flex-direction: column; gap: .5rem; max-height: 400px; overflow-y: auto; margin: 1rem 0; }
   .group-item {
     display: flex; align-items: center; justify-content: space-between;
     padding: .75rem 1rem; background: var(--surface2); border-radius: 8px; cursor: pointer;
     transition: background .15s; border: 2px solid transparent;
   }
   .group-item:hover { background: var(--border); }
-  .group-item.selected { border-color: var(--accent); }
+  .group-item.selected { border-color: var(--accent); background: rgba(99, 102, 241, 0.1); }
 
-  .status { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-radius: 8px; font-size: .85rem; }
+  .status { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-radius: 8px; font-size: .85rem; margin: .5rem 0; }
   .status-ok { background: #14532d; color: var(--green); }
   .status-error { background: #450a0a; color: var(--red); }
+  .status-info { background: rgba(59, 130, 246, 0.1); color: var(--blue); }
 
   .info-box { background: var(--surface2); border-left: 4px solid var(--blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
-  .info-box p { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+  .info-box p { font-size: .85rem; color: var(--muted); line-height: 1.5; margin: .25rem 0; }
 
   .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
   .stat { background: var(--surface2); padding: 1rem; border-radius: 8px; text-align: center; }
-  .stat .num { font-size: 1.5rem; font-weight: 700; }
+  .stat .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
   .stat .lbl { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
 
-  .actions { display: flex; gap: .75rem; margin-top: 1rem; }
+  .actions { display: flex; gap: .75rem; margin-top: 1rem; flex-wrap: wrap; }
+  .hidden { display: none !important; }
 </style>
 </head>
-<body x-data="ataApp()">
+<body>
   <div class="container">
     <h1>📊 Configuração da Ata</h1>
     <p class="subtitle">Integração com Google Sheets para notificações automáticas</p>
@@ -85,152 +87,240 @@
       <p>• 18h - Resumo do dia</p>
     </div>
 
+    <!-- 1. Habilitar -->
     <div class="card">
       <div class="card-title">1. Habilitar Integração</div>
       <div class="toggle">
-        <input type="checkbox" x-model="config.sheets_enabled" @change="saveConfig()">
-        <span x-text="config.sheets_enabled ? 'Ativado' : 'Desativado'"></span>
+        <input type="checkbox" id="enableToggle">
+        <span id="toggleLabel">Desativado</span>
       </div>
     </div>
 
-    <div class="card" x-show="config.sheets_enabled">
+    <!-- 2. ID Planilha -->
+    <div class="card" id="card2">
       <div class="card-title">2. ID da Planilha</div>
       <div class="form-group">
         <label>ID do Google Sheets</label>
-        <input type="text" x-model="config.spreadsheet_id" placeholder="1RCqibwPE8xSrZ7tK17XWST9hadwlLRykz4geju70YCg">
+        <input type="text" id="sheetId" placeholder="1RCqibwPE8xSrZ7tK17XWST9hadwlLRykz4geju70YCg">
       </div>
-      <button class="btn btn-primary" @click="testConnection()">Testar Conexão</button>
-
-      <div x-show="testResult" class="stats">
-        <div class="stat">
-          <div class="num" x-text="testResult?.gestao?.atrasadas || 0"></div>
-          <div class="lbl">Tarefas Atrasadas</div>
-        </div>
-        <div class="stat">
-          <div class="num" x-text="testResult?.sc?.urgentes || 0"></div>
-          <div class="lbl">SC Urgentes</div>
-        </div>
-      </div>
+      <button class="btn btn-primary" id="btnTest">🔍 Testar Conexão</button>
+      <div id="testStats" class="stats hidden"></div>
     </div>
 
-    <div class="card" x-show="config.sheets_enabled">
+    <!-- 3. Grupos -->
+    <div class="card" id="card3">
       <div class="card-title">3. Selecionar Grupo WhatsApp</div>
-
-      <div x-show="config.ata_group_name && groups.length === 0" style="margin-bottom: 1rem;">
-        <div class="status status-ok">
-          ✓ Grupo já selecionado: <strong x-text="config.ata_group_name"></strong>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" @click="loadGroups()" style="margin-bottom: 1rem;" x-show="groups.length === 0">
-        📱 Carregar Grupos do WhatsApp
-      </button>
-
-      <div class="group-list" x-show="groups.length > 0">
-        <template x-for="group in groups" :key="group.id._serialized">
-          <div class="group-item"
-               :class="{ selected: config.ata_group_id === group.id._serialized }"
-               @click="selectGroup(group)">
-            <span x-text="group.name"></span>
-            <span x-show="config.ata_group_id === group.id._serialized" style="color: var(--accent);">✓</span>
-          </div>
-        </template>
-      </div>
-
-      <div x-show="config.ata_group_name && groups.length > 0" style="margin-top: 1rem;">
-        <div class="status status-ok">
-          ✓ Grupo selecionado: <strong x-text="config.ata_group_name"></strong>
-        </div>
-      </div>
+      <div id="currentGroup"></div>
+      <button class="btn btn-primary" id="btnLoadGroups">📱 Carregar Grupos</button>
+      <div id="groupsList" class="hidden"></div>
     </div>
 
-    <div class="card" x-show="config.sheets_enabled && config.ata_group_id">
+    <!-- 4. Testar -->
+    <div class="card" id="card4">
       <div class="card-title">4. Testar Notificações</div>
       <div class="actions">
-        <button class="btn btn-primary" @click="sendTest('pos-reuniao')">
-          📊 Pós-Reunião
-        </button>
-        <button class="btn btn-primary" @click="sendTest('alerta')">
-          ⚠️ Alerta
-        </button>
-        <button class="btn btn-primary" @click="sendTest('resumo')">
-          📌 Resumo
-        </button>
+        <button class="btn btn-primary" data-test="pos-reuniao">📊 Pós-Reunião</button>
+        <button class="btn btn-primary" data-test="alerta">⚠️ Alerta</button>
+        <button class="btn btn-primary" data-test="resumo">📌 Resumo</button>
       </div>
     </div>
 
-    <div style="margin-top: 2rem;">
-      <a href="/" class="btn btn-ghost">← Voltar ao Dashboard</a>
-      <button class="btn btn-green" @click="saveConfig()" style="float: right;">Salvar Configurações</button>
+    <!-- Footer -->
+    <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+      <a href="/" class="btn btn-ghost">← Voltar</a>
+      <button class="btn btn-green" id="btnSave">💾 Salvar Tudo</button>
     </div>
   </div>
 
-  <script>
-    function ataApp() {
-      return {
-        config: {
-          sheets_enabled: false,
-          spreadsheet_id: '',
-          ata_group_id: null,
-          ata_group_name: null
-        },
-        groups: [],
-        testResult: null,
+<script>
+let config = {
+  sheets_enabled: false,
+  spreadsheet_id: '',
+  ata_group_id: null,
+  ata_group_name: null
+};
+let groups = [];
 
-        async init() {
-          await this.loadConfig();
-        },
+// ── Init ──────────────────────────────────────────────────────────────
+async function init() {
+  await loadConfig();
+  updateUI();
+  attachEvents();
+}
 
-        async loadConfig() {
-          const res = await fetch('/api/ata/config');
-          this.config = await res.json();
-        },
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/ata/config');
+    config = await res.json();
+    console.log('Config carregada:', config);
+  } catch (err) {
+    console.error('Erro ao carregar config:', err);
+  }
+}
 
-        async saveConfig() {
-          const res = await fetch('/api/ata/config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(this.config)
-          });
-          const data = await res.json();
-          this.config = data;
-          alert('✅ Configurações salvas!');
-        },
+function updateUI() {
+  const toggle = document.getElementById('enableToggle');
+  const label = document.getElementById('toggleLabel');
+  const sheetId = document.getElementById('sheetId');
 
-        async testConnection() {
-          try {
-            await this.saveConfig();
-            const res = await fetch('/api/ata/test', { method: 'POST' });
-            const data = await res.json();
-            this.testResult = data;
-            alert('✅ Conexão OK! Dados carregados da planilha.');
-          } catch (err) {
-            alert('❌ Erro: ' + err.message);
-          }
-        },
+  toggle.checked = config.sheets_enabled === 1 || config.sheets_enabled === true;
+  label.textContent = toggle.checked ? 'Ativado ✓' : 'Desativado';
+  sheetId.value = config.spreadsheet_id || '';
 
-        async loadGroups() {
-          const res = await fetch('/api/groups');
-          this.groups = await res.json();
-        },
+  // Mostra/esconde cards
+  const enabled = toggle.checked;
+  document.getElementById('card2').style.display = enabled ? 'block' : 'none';
+  document.getElementById('card3').style.display = enabled ? 'block' : 'none';
+  document.getElementById('card4').style.display = enabled ? 'block' : 'none';
 
-        async selectGroup(group) {
-          this.config.ata_group_id = group.id._serialized;
-          this.config.ata_group_name = group.name;
-          await this.saveConfig();
-        },
+  // Mostra grupo selecionado
+  const currentGroup = document.getElementById('currentGroup');
+  if (config.ata_group_name) {
+    currentGroup.innerHTML = `<div class="status status-ok">✓ Grupo: <strong>${config.ata_group_name}</strong></div>`;
+  } else {
+    currentGroup.innerHTML = '<div class="status status-info">ℹ️ Nenhum grupo selecionado</div>';
+  }
+}
 
-        async sendTest(type) {
-          try {
-            const res = await fetch(`/api/ata/trigger/${type}`, { method: 'POST' });
-            const data = await res.json();
-            alert(data.message);
-          } catch (err) {
-            alert('❌ Erro: ' + err.message);
-          }
-        }
-      }
+function attachEvents() {
+  // Toggle
+  document.getElementById('enableToggle').addEventListener('change', async (e) => {
+    config.sheets_enabled = e.target.checked ? 1 : 0;
+    await saveConfig();
+    updateUI();
+  });
+
+  // Sheet ID
+  document.getElementById('sheetId').addEventListener('blur', (e) => {
+    config.spreadsheet_id = e.target.value.trim();
+  });
+
+  // Testar conexão
+  document.getElementById('btnTest').addEventListener('click', testConnection);
+
+  // Carregar grupos
+  document.getElementById('btnLoadGroups').addEventListener('click', loadGroups);
+
+  // Salvar
+  document.getElementById('btnSave').addEventListener('click', saveConfig);
+
+  // Testar notificações
+  document.querySelectorAll('[data-test]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const type = e.target.getAttribute('data-test');
+      sendTest(type);
+    });
+  });
+}
+
+// ── API Calls ─────────────────────────────────────────────────────────
+async function saveConfig() {
+  try {
+    const res = await fetch('/api/ata/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    config = await res.json();
+    alert('✅ Configurações salvas!');
+    updateUI();
+  } catch (err) {
+    alert('❌ Erro ao salvar: ' + err.message);
+  }
+}
+
+async function testConnection() {
+  const btn = document.getElementById('btnTest');
+  btn.disabled = true;
+  btn.textContent = '⏳ Testando...';
+
+  try {
+    config.spreadsheet_id = document.getElementById('sheetId').value.trim();
+    await saveConfig();
+
+    const res = await fetch('/api/ata/test', { method: 'POST' });
+    const data = await res.json();
+
+    document.getElementById('testStats').innerHTML = `
+      <div class="stat">
+        <div class="num">${data.gestao?.atrasadas || 0}</div>
+        <div class="lbl">Tarefas Atrasadas</div>
+      </div>
+      <div class="stat">
+        <div class="num">${data.sc?.urgentes || 0}</div>
+        <div class="lbl">SC Urgentes</div>
+      </div>
+    `;
+    document.getElementById('testStats').classList.remove('hidden');
+    alert('✅ Conexão OK! Dados carregados da planilha.');
+  } catch (err) {
+    alert('❌ Erro: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Testar Conexão';
+  }
+}
+
+async function loadGroups() {
+  const btn = document.getElementById('btnLoadGroups');
+  btn.disabled = true;
+  btn.textContent = '⏳ Carregando...';
+
+  try {
+    const res = await fetch('/api/groups');
+    groups = await res.json();
+    console.log('Grupos carregados:', groups);
+
+    if (groups.length === 0) {
+      alert('⚠️ Nenhum grupo encontrado. Certifique-se de que o WhatsApp está conectado.');
+      return;
     }
-  </script>
+
+    renderGroups();
+  } catch (err) {
+    alert('❌ Erro ao carregar grupos: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📱 Carregar Grupos';
+  }
+}
+
+function renderGroups() {
+  const container = document.getElementById('groupsList');
+  container.innerHTML = groups.map(group => `
+    <div class="group-item ${config.ata_group_id === group.id._serialized ? 'selected' : ''}"
+         data-id="${group.id._serialized}"
+         data-name="${group.name}">
+      <span>${group.name} (${group.participants || 0} participantes)</span>
+      <span style="color: var(--accent);">${config.ata_group_id === group.id._serialized ? '✓' : ''}</span>
+    </div>
+  `).join('');
+
+  container.classList.remove('hidden');
+
+  // Attach click events
+  container.querySelectorAll('.group-item').forEach(item => {
+    item.addEventListener('click', () => {
+      config.ata_group_id = item.getAttribute('data-id');
+      config.ata_group_name = item.getAttribute('data-name');
+      saveConfig();
+      renderGroups();
+    });
+  });
+}
+
+async function sendTest(type) {
+  try {
+    const res = await fetch(`/api/ata/trigger/${type}`, { method: 'POST' });
+    const data = await res.json();
+    alert(data.message || '✅ Notificação enviada!');
+  } catch (err) {
+    alert('❌ Erro: ' + err.message);
+  }
+}
+
+// Start
+init();
+</script>
 </body>
 </html>
