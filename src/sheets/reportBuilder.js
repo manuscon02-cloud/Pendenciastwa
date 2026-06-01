@@ -1,17 +1,18 @@
 class ReportBuilder {
   buildPosReuniao(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
-    const critical = analysis.sc.detalhes.urgentes.slice(0, 4);
-    const tarefasCriticas = analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 3);
+    const critical = analysis.sc?.detalhes?.urgentes?.slice(0, 4) || [];
+    const tarefasCriticas = analysis.gestao?.detalhes?.aguardandoAprovacao?.slice(0, 3) || [];
 
     let msg = `📊 RELATÓRIO PÓS-REUNIÃO - ${hoje}\n\n`;
 
     if (analysis.sc.urgentes > 0) {
-      msg += `🔴 SC URGENTES: ${analysis.sc.urgentes}\n`;
+      msg += `🔴 ${analysis.sc.urgentes} SC URGENTES\n`;
       critical.forEach(sc => {
         const dias = sc.DiasEmAberto || '?';
         const desc = this.truncate(sc.Descricao, 40);
-        msg += `• SC ${sc.SC} - ${desc} (${dias} dias)\n`;
+        const resp = sc.Responsavel || '?';
+        msg += `• SC ${sc.SC} - ${desc}\n  Responsável: ${resp} (${dias}d)\n`;
       });
       msg += '\n';
     }
@@ -89,7 +90,16 @@ class ReportBuilder {
 
     const prazoHoje = analysis.gestao?.detalhes?.prazoProximo || [];
     if (prazoHoje.length > 0) {
-      msg += `📅 ${prazoHoje.length} tarefas com prazo hoje/amanhã\n`;
+      msg += `📅 ${prazoHoje.length} TAREFAS COM PRAZO HOJE/AMANHÃ\n`;
+      prazoHoje.slice(0, 3).forEach(item => {
+        const resp = item.Responsavel || 'Sem responsável';
+        const acao = this.truncate(item.Acao || item.Ocorrencia, 40);
+        const prazo = item.Prazo || '?';
+        msg += `• ${resp} - ${acao} (${prazo})\n`;
+      });
+      if (prazoHoje.length > 3) {
+        msg += `  ...e mais ${prazoHoje.length - 3}\n`;
+      }
     }
 
     if (urgentes.length === 0 && (!antigas[0] || antigas[0].DiasEmAberto <= 7) && prazoHoje.length === 0) {
