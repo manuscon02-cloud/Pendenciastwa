@@ -99,7 +99,14 @@ async function initWhatsApp(messageHandler) {
         '--disable-accelerated-2d-canvas',
         '--no-first-run',
         '--no-zygote',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-session-crashed-bubble',
+        '--disable-infobars',
+        '--disable-features=TranslateUI',
+        '--disable-blink-features=AutomationControlled',
+        '--single-process',  // Força processo único (evita locks)
+        '--no-default-browser-check',
+        '--disable-site-isolation-trials'
       ],
       executablePath: chromiumPath
     }
