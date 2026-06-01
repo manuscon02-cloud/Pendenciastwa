@@ -64,7 +64,7 @@ class ReportBuilder {
 
     let msg = `⏰ *ALERTA* - ${hora}\n\n`;
 
-    const urgentes = analysis.sc.detalhes.urgentes.slice(0, 3);
+    const urgentes = analysis.sc?.detalhes?.urgentes?.slice(0, 3) || [];
     if (urgentes.length > 0) {
       msg += `🚨 *${urgentes.length} SC URGENTES*\n`;
       urgentes.forEach(sc => {
@@ -75,8 +75,8 @@ class ReportBuilder {
       msg += '\n';
     }
 
-    const antigas = analysis.sc.detalhes.maisAntigas.slice(0, 3);
-    if (antigas.length > 0 && antigas[0].DiasEmAberto > 7) {
+    const antigas = analysis.sc?.detalhes?.maisAntigas?.slice(0, 3) || [];
+    if (antigas.length > 0 && antigas[0]?.DiasEmAberto > 7) {
       msg += `⏳ *SC MAIS ANTIGAS*\n`;
       antigas.slice(0, 2).forEach(sc => {
         const dias = sc.DiasEmAberto || '?';
@@ -86,15 +86,17 @@ class ReportBuilder {
       msg += '\n';
     }
 
-    const prazoHoje = analysis.gestao.detalhes.prazoProximo;
+    const prazoHoje = analysis.gestao?.detalhes?.prazoProximo || [];
     if (prazoHoje.length > 0) {
       msg += `📅 *${prazoHoje.length} tarefas com prazo hoje/amanhã*\n`;
     }
 
-    if (urgentes.length === 0 && antigas[0]?.DiasEmAberto <= 7 && prazoHoje.length === 0) {
+    if (urgentes.length === 0 && (!antigas[0] || antigas[0].DiasEmAberto <= 7) && prazoHoje.length === 0) {
+      console.log('ℹ️  Nenhum item crítico para alertar');
       return null;
     }
 
+    console.log('✅ Mensagem de alerta construída:', msg.substring(0, 100) + '...');
     return msg.trim();
   }
 

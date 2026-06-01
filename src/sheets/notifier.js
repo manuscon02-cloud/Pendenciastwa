@@ -57,19 +57,31 @@ class AtaNotifier {
   async sendAlertaUrgente() {
     try {
       const groupId = this.getGroupId();
-      if (!groupId) return;
+      if (!groupId) {
+        console.log('⚠️  Grupo não configurado para ata');
+        return;
+      }
 
+      console.log('📊 Analisando dados da planilha...');
       const analysis = await analyzer.analyze();
+      console.log('✅ Análise concluída:', {
+        sc_urgentes: analysis.sc.urgentes,
+        sc_total: analysis.sc.total,
+        tarefas_atrasadas: analysis.gestao.atrasadas
+      });
+
       const message = reportBuilder.buildAlertaUrgente(analysis);
 
       if (message) {
+        console.log('📱 Enviando mensagem para grupo:', groupId);
         await this.client.sendMessage(groupId, message);
         console.log('✅ Alerta urgente enviado');
       } else {
         console.log('ℹ️  Nenhum alerta urgente necessário no momento');
       }
     } catch (error) {
-      console.error('❌ Erro ao enviar alerta urgente:', error.message);
+      console.error('❌ Erro ao enviar alerta urgente:', error);
+      console.error('Stack trace:', error.stack);
     }
   }
 
