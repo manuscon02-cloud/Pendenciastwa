@@ -42,9 +42,16 @@ async function initWhatsApp(messageHandler) {
   const chromiumPath = findChromium();
   console.log(`🌐 Chromium: ${chromiumPath || 'auto-detect pelo puppeteer'}`);
 
+  // Garantir que o diretório de autenticação existe
+  const authPath = process.env.WWEBJS_AUTH_PATH || path.join(__dirname, '../../wwebjs_auth');
+  if (!fs.existsSync(authPath)) {
+    fs.mkdirSync(authPath, { recursive: true });
+    console.log(`📁 Diretório de autenticação criado: ${authPath}`);
+  }
+
   client = new Client({
     authStrategy: new LocalAuth({
-      dataPath: process.env.WWEBJS_AUTH_PATH || path.join(__dirname, '../../wwebjs_auth')
+      dataPath: authPath
     }),
     puppeteer: {
       headless: true,
