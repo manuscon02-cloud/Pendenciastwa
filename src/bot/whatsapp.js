@@ -48,42 +48,30 @@ async function initWhatsApp(messageHandler) {
     ? '/app/data/wwebjs_auth'
     : (process.env.WWEBJS_AUTH_PATH || path.join(__dirname, '../../wwebjs_auth'));
 
-  if (!fs.existsSync(authPath)) {
-    fs.mkdirSync(authPath, { recursive: true });
-    console.log(`📁 Diretório de autenticação criado: ${authPath}`);
-  } else {
-    console.log(`📁 Usando diretório de autenticação: ${authPath}`);
+  // SOLUÇÃO DRÁSTICA: Se tiver lock, deleta TUDO e começa do zero
+  if (fs.existsSync(authPath)) {
+    console.log(`📁 Diretório de autenticação existe: ${authPath}`);
 
-    // Limpar locks do Chromium em todos os locais possíveis
     try {
-      const possiblePaths = [
-        authPath,
-        path.join(authPath, 'session'),
-        path.join(authPath, 'session-default')
-      ];
+      // Verifica se tem arquivo de sessão (session-default)
+      const sessionPath = path.join(authPath, 'session-default');
+      const hasSession = fs.existsSync(sessionPath);
 
-      const lockFiles = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
-
-      possiblePaths.forEach(dir => {
-        if (fs.existsSync(dir)) {
-          lockFiles.forEach(file => {
-            const lockPath = path.join(dir, file);
-            if (fs.existsSync(lockPath)) {
-              fs.unlinkSync(lockPath);
-              console.log(`🔓 Lock removido: ${lockPath}`);
-            }
-          });
-        }
-      });
-
-      // Listar conteúdo do authPath para debug
-      if (fs.existsSync(authPath)) {
-        const files = fs.readdirSync(authPath);
-        console.log(`📂 Conteúdo de ${authPath}:`, files.slice(0, 10));
+      if (hasSession) {
+        console.log('🔐 Sessão existente encontrada - mantendo');
+      } else {
+        console.log('⚠️  Sem sessão válida - limpando pasta para evitar locks');
+        // Remove TUDO
+        fs.rmSync(authPath, { recursive: true, force: true });
+        fs.mkdirSync(authPath, { recursive: true });
+        console.log('🗑️  Pasta limpa - novo QR code será gerado');
       }
     } catch (err) {
-      console.log('⚠️  Erro ao remover locks:', err.message);
+      console.log('⚠️  Erro ao verificar/limpar:', err.message);
     }
+  } else {
+    fs.mkdirSync(authPath, { recursive: true });
+    console.log(`📁 Diretório de autenticação criado: ${authPath}`);
   }
 
   client = new Client({
