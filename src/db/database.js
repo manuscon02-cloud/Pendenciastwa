@@ -2,12 +2,17 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/pendencias.db');
+// No Railway, sempre usar /app/data/pendencias.db
+const DB_PATH = process.env.RAILWAY_ENVIRONMENT
+  ? '/app/data/pendencias.db'
+  : (process.env.DB_PATH || path.join(__dirname, '../../data/pendencias.db'));
 
 const dataDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
+
+console.log(`💾 Banco de dados: ${DB_PATH}`);
 
 let db;
 

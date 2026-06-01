@@ -43,10 +43,16 @@ async function initWhatsApp(messageHandler) {
   console.log(`🌐 Chromium: ${chromiumPath || 'auto-detect pelo puppeteer'}`);
 
   // Garantir que o diretório de autenticação existe
-  const authPath = process.env.WWEBJS_AUTH_PATH || path.join(__dirname, '../../wwebjs_auth');
+  // No Railway, sempre usar /app/data/wwebjs_auth
+  const authPath = process.env.RAILWAY_ENVIRONMENT
+    ? '/app/data/wwebjs_auth'
+    : (process.env.WWEBJS_AUTH_PATH || path.join(__dirname, '../../wwebjs_auth'));
+
   if (!fs.existsSync(authPath)) {
     fs.mkdirSync(authPath, { recursive: true });
     console.log(`📁 Diretório de autenticação criado: ${authPath}`);
+  } else {
+    console.log(`📁 Usando diretório de autenticação: ${authPath}`);
   }
 
   client = new Client({
