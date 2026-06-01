@@ -83,8 +83,18 @@ class AtaNotifier {
         console.log('📝 Tamanho da mensagem:', message.length, 'caracteres');
         console.log('📄 Preview:', message.substring(0, 200));
 
-        await this.client.sendMessage(groupId, message);
-        console.log('✅ Alerta urgente enviado');
+        // Teste: enviar mensagem simples primeiro
+        try {
+          await this.client.sendMessage(groupId, 'Teste: Bot de ata funcionando');
+          console.log('✅ Mensagem de teste enviada com sucesso');
+        } catch (testError) {
+          console.error('❌ Erro no teste com mensagem simples:', testError.message);
+          throw testError;
+        }
+
+        // Se o teste passou, tenta a mensagem real
+        // await this.client.sendMessage(groupId, message);
+        console.log('✅ Alerta urgente enviado (modo teste)');
       } else {
         console.log('ℹ️  Nenhum alerta urgente necessário no momento');
       }
