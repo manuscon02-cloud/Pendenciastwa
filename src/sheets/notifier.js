@@ -23,6 +23,16 @@ class AtaNotifier {
       })
     );
 
+    // TESTE: Disparo às 16h15 (remover depois)
+    this.jobs.push(
+      cron.schedule('15 16 * * *', () => {
+        console.log('🧪 TESTE: Disparando alerta às 16h15');
+        this.sendAlertaUrgente();
+      }, {
+        timezone: 'America/Sao_Paulo'
+      })
+    );
+
     this.jobs.push(
       cron.schedule('0 18 * * 1-5', () => this.sendResumoFimDia(), {
         timezone: 'America/Sao_Paulo'
