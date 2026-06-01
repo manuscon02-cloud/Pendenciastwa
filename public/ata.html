@@ -301,8 +301,18 @@ function renderGroups() {
   // Attach click events
   container.querySelectorAll('.group-item').forEach(item => {
     item.addEventListener('click', () => {
-      config.ata_group_id = item.getAttribute('data-id');
-      config.ata_group_name = item.getAttribute('data-name');
+      const groupId = item.getAttribute('data-id');
+      const groupName = item.getAttribute('data-name');
+
+      console.log('Grupo selecionado:', { groupId, groupName });
+
+      if (!groupId || groupId === 'undefined') {
+        alert('❌ Erro: ID do grupo inválido');
+        return;
+      }
+
+      config.ata_group_id = groupId;
+      config.ata_group_name = groupName;
       saveConfig();
       renderGroups();
     });
