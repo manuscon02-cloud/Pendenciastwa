@@ -62,6 +62,12 @@ class AtaNotifier {
         return;
       }
 
+      // Verificar se o cliente está pronto
+      if (!this.client || typeof this.client.sendMessage !== 'function') {
+        console.log('⚠️  Cliente WhatsApp não está pronto');
+        return;
+      }
+
       console.log('📊 Analisando dados da planilha...');
       const analysis = await analyzer.analyze();
       console.log('✅ Análise concluída:', {
@@ -74,6 +80,9 @@ class AtaNotifier {
 
       if (message) {
         console.log('📱 Enviando mensagem para grupo:', groupId);
+        console.log('📝 Tamanho da mensagem:', message.length, 'caracteres');
+        console.log('📄 Preview:', message.substring(0, 200));
+
         await this.client.sendMessage(groupId, message);
         console.log('✅ Alerta urgente enviado');
       } else {

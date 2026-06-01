@@ -4,10 +4,10 @@ class ReportBuilder {
     const critical = analysis.sc.detalhes.urgentes.slice(0, 4);
     const tarefasCriticas = analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 3);
 
-    let msg = `📊 *RELATÓRIO PÓS-REUNIÃO* - ${hoje}\n\n`;
+    let msg = `📊 RELATÓRIO PÓS-REUNIÃO - ${hoje}\n\n`;
 
     if (analysis.sc.urgentes > 0) {
-      msg += `🔴 *SC URGENTES: ${analysis.sc.urgentes}*\n`;
+      msg += `🔴 SC URGENTES: ${analysis.sc.urgentes}\n`;
       critical.forEach(sc => {
         const dias = sc.DiasEmAberto || '?';
         const desc = this.truncate(sc.Descricao, 40);
@@ -18,7 +18,7 @@ class ReportBuilder {
 
     if (analysis.gestao.aguardandoAprovacao > 0 || analysis.gestao.atrasadas > 0) {
       const total = analysis.gestao.aguardandoAprovacao + analysis.gestao.atrasadas;
-      msg += `⚠️ *TAREFAS CRÍTICAS: ${total}*\n`;
+      msg += `⚠️ TAREFAS CRÍTICAS: ${total}\n`;
 
       if (analysis.gestao.aguardandoAprovacao > 0) {
         msg += `• ${analysis.gestao.aguardandoAprovacao} aguardando aprovação\n`;
@@ -36,7 +36,7 @@ class ReportBuilder {
     }
 
     if (analysis.gestao.semPrazo > 0) {
-      msg += `📅 *PRAZOS NÃO CADASTRADOS: ${analysis.gestao.semPrazo}*\n`;
+      msg += `📅 PRAZOS NÃO CADASTRADOS: ${analysis.gestao.semPrazo}\n`;
       analysis.gestao.detalhes.semPrazo.slice(0, 5).forEach(item => {
         const resp = item.Responsavel || 'Sem responsável';
         const acao = this.truncate(item.Acao || item.Ocorrencia, 40);
@@ -46,11 +46,11 @@ class ReportBuilder {
     }
 
     if (analysis.sc.aprovadoAtrasado > 0) {
-      msg += `📋 *Total: ${analysis.sc.aprovadoAtrasado} SC aprovadas atrasadas*\n`;
+      msg += `📋 Total: ${analysis.sc.aprovadoAtrasado} SC aprovadas atrasadas\n`;
     }
 
     if (!this.hasCriticalIssues(analysis) && analysis.gestao.semPrazo === 0) {
-      msg = `📊 *RELATÓRIO PÓS-REUNIÃO* - ${hoje}\n\n`;
+      msg = `📊 RELATÓRIO PÓS-REUNIÃO - ${hoje}\n\n`;
       msg += `✅ Tudo sob controle\n`;
       msg += `• ${analysis.gestao.emAndamento} tarefas em andamento\n`;
       msg += `• ${analysis.sc.total} SC em processo\n`;
@@ -62,11 +62,12 @@ class ReportBuilder {
   buildAlertaUrgente(analysis) {
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-    let msg = `⏰ *ALERTA* - ${hora}\n\n`;
+    // Mensagem sem asteriscos (formatação) para evitar erro do WhatsApp
+    let msg = `⏰ ALERTA - ${hora}\n\n`;
 
     const urgentes = analysis.sc?.detalhes?.urgentes?.slice(0, 3) || [];
     if (urgentes.length > 0) {
-      msg += `🚨 *${urgentes.length} SC URGENTES*\n`;
+      msg += `🚨 ${urgentes.length} SC URGENTES\n`;
       urgentes.forEach(sc => {
         const dias = sc.DiasEmAberto || '?';
         const desc = this.truncate(sc.Descricao, 35);
@@ -77,7 +78,7 @@ class ReportBuilder {
 
     const antigas = analysis.sc?.detalhes?.maisAntigas?.slice(0, 3) || [];
     if (antigas.length > 0 && antigas[0]?.DiasEmAberto > 7) {
-      msg += `⏳ *SC MAIS ANTIGAS*\n`;
+      msg += `⏳ SC MAIS ANTIGAS\n`;
       antigas.slice(0, 2).forEach(sc => {
         const dias = sc.DiasEmAberto || '?';
         const desc = this.truncate(sc.Descricao, 35);
@@ -88,7 +89,7 @@ class ReportBuilder {
 
     const prazoHoje = analysis.gestao?.detalhes?.prazoProximo || [];
     if (prazoHoje.length > 0) {
-      msg += `📅 *${prazoHoje.length} tarefas com prazo hoje/amanhã*\n`;
+      msg += `📅 ${prazoHoje.length} tarefas com prazo hoje/amanhã\n`;
     }
 
     if (urgentes.length === 0 && (!antigas[0] || antigas[0].DiasEmAberto <= 7) && prazoHoje.length === 0) {
@@ -103,9 +104,9 @@ class ReportBuilder {
   buildResumoFimDia(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
-    let msg = `📌 *RESUMO DO DIA* - ${hoje}\n\n`;
+    let msg = `📌 RESUMO DO DIA - ${hoje}\n\n`;
 
-    msg += `📊 *Visão Geral*\n`;
+    msg += `📊 Visão Geral\n`;
     msg += `• SC urgentes: ${analysis.sc.urgentes}\n`;
     msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
     msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
@@ -117,7 +118,7 @@ class ReportBuilder {
     msg += '\n';
 
     if (analysis.sc.urgentes > 0 || analysis.gestao.atrasadas > 0) {
-      msg += `⚠️ *Atenção necessária amanhã*\n`;
+      msg += `⚠️ Atenção necessária amanhã\n`;
 
       if (analysis.sc.urgentes > 0) {
         msg += `• Priorizar ${analysis.sc.urgentes} SC urgentes\n`;
