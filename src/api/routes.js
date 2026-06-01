@@ -287,7 +287,7 @@ router.post('/ata/config', (req, res) => {
       ata_group_name = COALESCE(?, ata_group_name)
     WHERE id = 1
   `).run(
-    sheets_enabled !== undefined ? sheets_enabled : null,
+    sheets_enabled !== undefined ? (sheets_enabled ? 1 : 0) : null,
     spreadsheet_id || null,
     ata_group_id || null,
     ata_group_name || null
