@@ -53,12 +53,21 @@ async function start() {
     console.log('📊 Inicializando integração Google Sheets...');
     const authenticated = await googleSheets.authenticate();
 
-    if (authenticated && ataConfig.ata_group_id) {
-      const ataNotifier = new AtaNotifier(getClient());
-      ataNotifier.init(() => ataConfig.ata_group_id);
-      console.log('✅ Notificações da ata ativadas');
-    } else if (!ataConfig.ata_group_id) {
-      console.log('⚠️  Google Sheets autenticado, mas grupo da ata não configurado');
+    if (authenticated) {
+      // Usa ata_group_id do banco, ou fallback para GROUP_ID do ambiente
+      let groupId = ataConfig.ata_group_id;
+      if (!groupId || groupId === 'undefined') {
+        groupId = process.env.GROUP_ID;
+        console.log('⚠️  ata_group_id não configurado, usando GROUP_ID do ambiente');
+      }
+
+      if (groupId) {
+        const ataNotifier = new AtaNotifier(getClient());
+        ataNotifier.init(() => groupId);
+        console.log('✅ Notificações da ata ativadas para grupo:', groupId);
+      } else {
+        console.log('⚠️  Google Sheets autenticado, mas nenhum grupo configurado');
+      }
     }
   }
 
