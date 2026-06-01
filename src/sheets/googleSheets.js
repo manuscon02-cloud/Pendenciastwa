@@ -10,16 +10,23 @@ class GoogleSheetsService {
 
   async authenticate() {
     try {
-      const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_PATH || './google-credentials.json';
+      let credentials;
 
-      if (!fs.existsSync(credentialsPath)) {
-        throw new Error(
-          `Arquivo de credenciais não encontrado: ${credentialsPath}\n` +
-          'Crie uma Service Account no Google Cloud e salve as credenciais neste arquivo.'
-        );
+      if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+        credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+        console.log('✅ Credenciais carregadas da variável de ambiente');
+      } else {
+        const credentialsPath = process.env.GOOGLE_SERVICE_ACCOUNT_PATH || './google-credentials.json';
+
+        if (!fs.existsSync(credentialsPath)) {
+          throw new Error(
+            `Arquivo de credenciais não encontrado: ${credentialsPath}\n` +
+            'Crie uma Service Account no Google Cloud e salve as credenciais neste arquivo.'
+          );
+        }
+
+        credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
       }
-
-      const credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
 
       this.auth = new google.auth.GoogleAuth({
         credentials,
