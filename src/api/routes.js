@@ -366,6 +366,31 @@ router.post('/ata/trigger/alerta', async (req, res) => {
   }
 });
 
+router.get('/ata/debug-groups', async (req, res) => {
+  try {
+    const db = getDB();
+    const ataConfig = db.prepare('SELECT * FROM ata_config WHERE id = 1').get();
+    const botConfig = {
+      group_id: db.prepare("SELECT value FROM bot_config WHERE key = 'group_id'").get()?.value,
+      group_name: db.prepare("SELECT value FROM bot_config WHERE key = 'group_name'").get()?.value
+    };
+
+    const { getGroups } = require('../bot/whatsapp');
+    const allGroups = await getGroups();
+
+    res.json({
+      ata_config: ataConfig,
+      bot_config: botConfig,
+      available_groups: allGroups.map(g => ({
+        id: g.id,
+        name: g.name
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/ata/trigger/resumo', async (req, res) => {
   try {
     const AtaNotifier = require('../sheets/notifier');
