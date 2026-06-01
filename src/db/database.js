@@ -99,6 +99,15 @@ function initDB() {
       value TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS ata_config (
+      id                INTEGER PRIMARY KEY CHECK (id = 1),
+      sheets_enabled    INTEGER DEFAULT 0,
+      spreadsheet_id    TEXT DEFAULT NULL,
+      ata_group_id      TEXT DEFAULT NULL,
+      ata_group_name    TEXT DEFAULT NULL,
+      last_sync         TEXT DEFAULT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS reminder_logs (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       pendency_id INTEGER,
@@ -115,6 +124,14 @@ function initDB() {
     const ins = db.prepare('INSERT INTO schedules (hour, minute) VALUES (?, ?)');
     ins.run(8, 0); ins.run(13, 0); ins.run(17, 0);
     console.log('📅 Horários padrão inseridos: 08:00, 13:00, 17:00');
+  }
+
+  const ataCount = db.prepare('SELECT COUNT(*) as c FROM ata_config').get();
+  if (ataCount.c === 0) {
+    db.prepare('INSERT INTO ata_config (id, sheets_enabled, spreadsheet_id) VALUES (1, 0, ?)').run(
+      process.env.GOOGLE_SHEET_ID || ''
+    );
+    console.log('📊 Configuração de ata inicializada');
   }
 
   try {

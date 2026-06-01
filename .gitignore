@@ -7,3 +7,4 @@ public/uploads/*
 *.db
 *.db-wal
 *.db-shm
+google-credentials.json

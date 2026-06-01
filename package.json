@@ -1,7 +1,7 @@
 {
   "name": "pendencias-bot",
-  "version": "1.0.0",
-  "description": "Bot de cobrança de pendências via WhatsApp",
+  "version": "2.0.0",
+  "description": "Bot de gestão de ata e pendências via WhatsApp",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -12,6 +12,7 @@
     "better-sqlite3": "^9.4.3",
     "dotenv": "^16.4.5",
     "express": "^4.18.2",
+    "googleapis": "^128.0.0",
     "node-cron": "^3.0.3",
     "qrcode": "^1.5.3",
     "whatsapp-web.js": "^1.23.0",

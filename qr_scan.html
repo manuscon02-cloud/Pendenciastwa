@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>QR Code – WhatsApp Bot</title>
+<style>
+  body { background: #111; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  h2 { margin-bottom: 1rem; font-size: 1.2rem; color: #22c55e; }
+  p  { font-size: .85rem; color: #94a3b8; margin-top: 1rem; max-width: 300px; text-align: center; }
+  img { border: 6px solid #fff; border-radius: 12px; width: 300px; height: 300px; }
+</style>
+</head>
+<body>
+  <h2>Escanear com WhatsApp</h2>
+  <img id="qr" src="" alt="QR Code" />
+  <p>Abra o WhatsApp &rarr; Mais opções (3 pontos) &rarr; <strong>Dispositivos conectados</strong> &rarr; Conectar um dispositivo</p>
+  <p id="status" style="color:#eab308">Buscando QR code...</p>
+
+  <script>
+    async function fetchQR() {
+      try {
+        const r = await fetch('https://pendenciastwa-production.up.railway.app/api/qr');
+        const data = await r.json();
+        if (data.qr) {
+          document.getElementById('qr').src = data.qr;
+          document.getElementById('status').textContent = 'Escaneie agora com o WhatsApp!';
+          document.getElementById('status').style.color = '#22c55e';
+          setTimeout(fetchQR, 30000); // atualiza a cada 30s se expirar
+        } else if (data.connected) {
+          document.getElementById('status').textContent = 'WhatsApp ja esta conectado!';
+          document.getElementById('status').style.color = '#22c55e';
+          document.getElementById('qr').style.display = 'none';
+        } else {
+          document.getElementById('status').textContent = 'Aguardando QR code... (recarregando em 5s)';
+          setTimeout(fetchQR, 5000);
+        }
+      } catch(e) {
+        document.getElementById('status').textContent = 'Erro ao buscar QR. Tentando novamente...';
+        setTimeout(fetchQR, 5000);
+      }
+    }
+    fetchQR();
+  </script>
+</body>
+</html>

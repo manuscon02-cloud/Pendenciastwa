@@ -3,6 +3,13 @@
 Bot de cobrança automática via WhatsApp para gestão de pendências de obra.
 Usa `whatsapp-web.js` (gratuito), Node.js e SQLite. Deploy no Railway.
 
+## 🆕 Nova Funcionalidade: Bot de Ata
+
+O bot agora também monitora sua **Ata de Reuniões no Google Sheets** e envia notificações automáticas sobre pendências críticas, SC urgentes e tarefas atrasadas.
+
+📖 **[Ver documentação completa da Ata →](README-ATA.md)**  
+⚡ **[Guia de início rápido →](QUICKSTART-ATA.md)**
+
 ---
 
 ## ⚡ Como funciona

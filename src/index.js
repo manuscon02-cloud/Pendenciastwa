@@ -2,10 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { initDB, getDB } = require('./db/database');
-const { initWhatsApp } = require('./bot/whatsapp');
+const { initWhatsApp, getClient } = require('./bot/whatsapp');
 const { handleMessage } = require('./bot/handlers');
 const { initScheduler } = require('./scheduler/cron');
 const routes = require('./api/routes');
+const AtaNotifier = require('./sheets/notifier');
+const googleSheets = require('./sheets/googleSheets');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,7 +36,7 @@ function applyEnvConfig(db) {
 async function start() {
   console.log('🚀 Iniciando sistema de pendências...\n');
 
-  initDB();            // cria tabelas + auto-seed se banco vazio
+  initDB();
   applyEnvConfig(getDB());
 
   console.log('📱 Inicializando WhatsApp (aguarde o QR code)...');
@@ -43,6 +45,22 @@ async function start() {
   );
 
   initScheduler();
+
+  const db = getDB();
+  const ataConfig = db.prepare('SELECT * FROM ata_config WHERE id = 1').get();
+
+  if (ataConfig && ataConfig.sheets_enabled) {
+    console.log('📊 Inicializando integração Google Sheets...');
+    const authenticated = await googleSheets.authenticate();
+
+    if (authenticated && ataConfig.ata_group_id) {
+      const ataNotifier = new AtaNotifier(getClient());
+      ataNotifier.init(() => ataConfig.ata_group_id);
+      console.log('✅ Notificações da ata ativadas');
+    } else if (!ataConfig.ata_group_id) {
+      console.log('⚠️  Google Sheets autenticado, mas grupo da ata não configurado');
+    }
+  }
 
   app.listen(PORT, () => {
     console.log(`\n✅ Servidor rodando na porta ${PORT}`);

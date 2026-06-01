@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Configuração Ata - Google Sheets</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+    --border: #475569; --text: #f1f5f9; --muted: #94a3b8;
+    --green: #22c55e; --yellow: #eab308; --red: #ef4444;
+    --blue: #3b82f6; --accent: #6366f1;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; padding: 2rem; }
+
+  .container { max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 1.75rem; margin-bottom: .5rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+
+  .form-group { margin-bottom: 1.25rem; }
+  .form-group label { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); margin-bottom: .5rem; }
+  .form-group input, .form-group select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: .75rem; color: var(--text); font-size: .9rem; outline: none;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+
+  .toggle { display: flex; align-items: center; gap: .75rem; }
+  .toggle input[type="checkbox"] {
+    width: 48px; height: 28px; appearance: none; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 999px; position: relative; cursor: pointer;
+    transition: background .2s;
+  }
+  .toggle input[type="checkbox"]:checked { background: var(--green); }
+  .toggle input[type="checkbox"]::before {
+    content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; top: 3px; left: 3px; transition: left .2s;
+  }
+  .toggle input[type="checkbox"]:checked::before { left: 23px; }
+
+  .btn { padding: .6rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-size: .9rem; font-weight: 600; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-green { background: #14532d; color: var(--green); }
+  .btn-ghost { background: var(--surface2); color: var(--text); }
+
+  .group-list { display: flex; flex-direction: column; gap: .5rem; max-height: 300px; overflow-y: auto; }
+  .group-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1rem; background: var(--surface2); border-radius: 8px; cursor: pointer;
+    transition: background .15s; border: 2px solid transparent;
+  }
+  .group-item:hover { background: var(--border); }
+  .group-item.selected { border-color: var(--accent); }
+
+  .status { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-radius: 8px; font-size: .85rem; }
+  .status-ok { background: #14532d; color: var(--green); }
+  .status-error { background: #450a0a; color: var(--red); }
+
+  .info-box { background: var(--surface2); border-left: 4px solid var(--blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+  .info-box p { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem; }
+  .stat { background: var(--surface2); padding: 1rem; border-radius: 8px; text-align: center; }
+  .stat .num { font-size: 1.5rem; font-weight: 700; }
+  .stat .lbl { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+
+  .actions { display: flex; gap: .75rem; margin-top: 1rem; }
+</style>
+</head>
+<body x-data="ataApp()">
+  <div class="container">
+    <h1>📊 Configuração da Ata</h1>
+    <p class="subtitle">Integração com Google Sheets para notificações automáticas</p>
+
+    <div class="info-box">
+      <p><strong>📅 Horários automáticos (Seg-Sex):</strong></p>
+      <p>• 07h40 - Relatório pós-reunião</p>
+      <p>• 10h, 12h, 14h, 16h - Alertas urgentes</p>
+      <p>• 18h - Resumo do dia</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">1. Habilitar Integração</div>
+      <div class="toggle">
+        <input type="checkbox" x-model="config.sheets_enabled" @change="saveConfig()">
+        <span x-text="config.sheets_enabled ? 'Ativado' : 'Desativado'"></span>
+      </div>
+    </div>
+
+    <div class="card" x-show="config.sheets_enabled">
+      <div class="card-title">2. ID da Planilha</div>
+      <div class="form-group">
+        <label>ID do Google Sheets</label>
+        <input type="text" x-model="config.spreadsheet_id" placeholder="1RCqibwPE8xSrZ7tK17XWST9hadwlLRykz4geju70YCg">
+      </div>
+      <button class="btn btn-primary" @click="testConnection()">Testar Conexão</button>
+
+      <div x-show="testResult" class="stats">
+        <div class="stat">
+          <div class="num" x-text="testResult?.gestao?.atrasadas || 0"></div>
+          <div class="lbl">Tarefas Atrasadas</div>
+        </div>
+        <div class="stat">
+          <div class="num" x-text="testResult?.sc?.urgentes || 0"></div>
+          <div class="lbl">SC Urgentes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" x-show="config.sheets_enabled">
+      <div class="card-title">3. Selecionar Grupo WhatsApp</div>
+      <button class="btn btn-ghost" @click="loadGroups()" style="margin-bottom: 1rem;">
+        Carregar Grupos
+      </button>
+
+      <div class="group-list" x-show="groups.length > 0">
+        <template x-for="group in groups" :key="group.id._serialized">
+          <div class="group-item"
+               :class="{ selected: config.ata_group_id === group.id._serialized }"
+               @click="selectGroup(group)">
+            <span x-text="group.name"></span>
+            <span x-show="config.ata_group_id === group.id._serialized" style="color: var(--accent);">✓</span>
+          </div>
+        </template>
+      </div>
+
+      <div x-show="config.ata_group_name" style="margin-top: 1rem;">
+        <div class="status status-ok">
+          ✓ Grupo selecionado: <strong x-text="config.ata_group_name"></strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" x-show="config.sheets_enabled && config.ata_group_id">
+      <div class="card-title">4. Testar Notificações</div>
+      <div class="actions">
+        <button class="btn btn-primary" @click="sendTest('pos-reuniao')">
+          📊 Pós-Reunião
+        </button>
+        <button class="btn btn-primary" @click="sendTest('alerta')">
+          ⚠️ Alerta
+        </button>
+        <button class="btn btn-primary" @click="sendTest('resumo')">
+          📌 Resumo
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top: 2rem;">
+      <a href="/" class="btn btn-ghost">← Voltar ao Dashboard</a>
+      <button class="btn btn-green" @click="saveConfig()" style="float: right;">Salvar Configurações</button>
+    </div>
+  </div>
+
+  <script>
+    function ataApp() {
+      return {
+        config: {
+          sheets_enabled: false,
+          spreadsheet_id: '',
+          ata_group_id: null,
+          ata_group_name: null
+        },
+        groups: [],
+        testResult: null,
+
+        async init() {
+          await this.loadConfig();
+        },
+
+        async loadConfig() {
+          const res = await fetch('/api/ata/config');
+          this.config = await res.json();
+        },
+
+        async saveConfig() {
+          const res = await fetch('/api/ata/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.config)
+          });
+          const data = await res.json();
+          this.config = data;
+          alert('✅ Configurações salvas!');
+        },
+
+        async testConnection() {
+          try {
+            await this.saveConfig();
+            const res = await fetch('/api/ata/test', { method: 'POST' });
+            const data = await res.json();
+            this.testResult = data;
+            alert('✅ Conexão OK! Dados carregados da planilha.');
+          } catch (err) {
+            alert('❌ Erro: ' + err.message);
+          }
+        },
+
+        async loadGroups() {
+          const res = await fetch('/api/groups');
+          this.groups = await res.json();
+        },
+
+        async selectGroup(group) {
+          this.config.ata_group_id = group.id._serialized;
+          this.config.ata_group_name = group.name;
+          await this.saveConfig();
+        },
+
+        async sendTest(type) {
+          try {
+            const res = await fetch(`/api/ata/trigger/${type}`, { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+          } catch (err) {
+            alert('❌ Erro: ' + err.message);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>

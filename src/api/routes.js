@@ -262,4 +262,125 @@ router.get('/logs', (req, res) => {
   res.json(logs);
 });
 
+// ── ATA GOOGLE SHEETS ─────────────────────────────────────────────────────────
+router.get('/ata/config', (req, res) => {
+  const db = getDB();
+  const config = db.prepare('SELECT * FROM ata_config WHERE id = 1').get() || {
+    sheets_enabled: 0,
+    spreadsheet_id: '',
+    ata_group_id: null,
+    ata_group_name: null,
+    last_sync: null
+  };
+  res.json(config);
+});
+
+router.post('/ata/config', (req, res) => {
+  const { sheets_enabled, spreadsheet_id, ata_group_id, ata_group_name } = req.body;
+  const db = getDB();
+
+  db.prepare(`
+    UPDATE ata_config SET
+      sheets_enabled = COALESCE(?, sheets_enabled),
+      spreadsheet_id = COALESCE(?, spreadsheet_id),
+      ata_group_id = COALESCE(?, ata_group_id),
+      ata_group_name = COALESCE(?, ata_group_name)
+    WHERE id = 1
+  `).run(
+    sheets_enabled !== undefined ? sheets_enabled : null,
+    spreadsheet_id || null,
+    ata_group_id || null,
+    ata_group_name || null
+  );
+
+  res.json(db.prepare('SELECT * FROM ata_config WHERE id = 1').get());
+});
+
+router.post('/ata/test', async (req, res) => {
+  try {
+    const analyzer = require('../sheets/analyzer');
+    const analysis = await analyzer.analyze();
+
+    res.json({
+      success: true,
+      gestao: {
+        total: analysis.gestao.total,
+        atrasadas: analysis.gestao.atrasadas,
+        emAndamento: analysis.gestao.emAndamento,
+        aguardandoAprovacao: analysis.gestao.aguardandoAprovacao
+      },
+      sc: {
+        total: analysis.sc.total,
+        urgentes: analysis.sc.urgentes,
+        aprovadoAtrasado: analysis.sc.aprovadoAtrasado
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/ata/trigger/pos-reuniao', async (req, res) => {
+  try {
+    const AtaNotifier = require('../sheets/notifier');
+    const { getClient } = require('../bot/whatsapp');
+    const db = getDB();
+    const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
+
+    if (!config || !config.ata_group_id) {
+      return res.status(400).json({ error: 'Grupo da ata não configurado' });
+    }
+
+    const notifier = new AtaNotifier(getClient());
+    notifier.getGroupId = () => config.ata_group_id;
+    await notifier.sendPosReuniao();
+
+    res.json({ success: true, message: 'Relatório pós-reunião enviado!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/ata/trigger/alerta', async (req, res) => {
+  try {
+    const AtaNotifier = require('../sheets/notifier');
+    const { getClient } = require('../bot/whatsapp');
+    const db = getDB();
+    const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
+
+    if (!config || !config.ata_group_id) {
+      return res.status(400).json({ error: 'Grupo da ata não configurado' });
+    }
+
+    const notifier = new AtaNotifier(getClient());
+    notifier.getGroupId = () => config.ata_group_id;
+    await notifier.sendAlertaUrgente();
+
+    res.json({ success: true, message: 'Alerta enviado!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/ata/trigger/resumo', async (req, res) => {
+  try {
+    const AtaNotifier = require('../sheets/notifier');
+    const { getClient } = require('../bot/whatsapp');
+    const db = getDB();
+    const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
+
+    if (!config || !config.ata_group_id) {
+      return res.status(400).json({ error: 'Grupo da ata não configurado' });
+    }
+
+    const notifier = new AtaNotifier(getClient());
+    notifier.getGroupId = () => config.ata_group_id;
+    await notifier.sendResumoFimDia();
+
+    res.json({ success: true, message: 'Resumo do dia enviado!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
