@@ -134,11 +134,9 @@ function initDB() {
     console.log('📊 Configuração de ata inicializada');
   }
 
-  try {
-    seedPendencies(db);
-  } catch (err) {
-    console.error('❌ Erro no auto-seed:', err.message);
-  }
+  // SEED DESABILITADO - Foco 100% em Google Sheets
+  // As pendências vêm da planilha, não do banco local
+  console.log('ℹ️  Seed de pendências desabilitado (usando Google Sheets)');
 
   console.log('✅ Banco de dados inicializado');
   return db;

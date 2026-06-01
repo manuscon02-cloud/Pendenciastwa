@@ -115,8 +115,15 @@
 
     <div class="card" x-show="config.sheets_enabled">
       <div class="card-title">3. Selecionar Grupo WhatsApp</div>
-      <button class="btn btn-ghost" @click="loadGroups()" style="margin-bottom: 1rem;">
-        Carregar Grupos
+
+      <div x-show="config.ata_group_name && groups.length === 0" style="margin-bottom: 1rem;">
+        <div class="status status-ok">
+          ✓ Grupo já selecionado: <strong x-text="config.ata_group_name"></strong>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" @click="loadGroups()" style="margin-bottom: 1rem;" x-show="groups.length === 0">
+        📱 Carregar Grupos do WhatsApp
       </button>
 
       <div class="group-list" x-show="groups.length > 0">
@@ -130,7 +137,7 @@
         </template>
       </div>
 
-      <div x-show="config.ata_group_name" style="margin-top: 1rem;">
+      <div x-show="config.ata_group_name && groups.length > 0" style="margin-top: 1rem;">
         <div class="status status-ok">
           ✓ Grupo selecionado: <strong x-text="config.ata_group_name"></strong>
         </div>
