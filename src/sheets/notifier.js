@@ -57,6 +57,9 @@ class AtaNotifier {
   async sendAlertaUrgente() {
     try {
       const groupId = this.getGroupId();
+      console.log('🔍 GroupId da ata:', groupId);
+      console.log('🔍 Tipo do groupId:', typeof groupId);
+
       if (!groupId) {
         console.log('⚠️  Grupo não configurado para ata');
         return;

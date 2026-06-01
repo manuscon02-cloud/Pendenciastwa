@@ -348,9 +348,13 @@ router.post('/ata/trigger/alerta', async (req, res) => {
     const db = getDB();
     const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
 
+    console.log('🔍 Config lida do banco:', config);
+
     if (!config || !config.ata_group_id) {
       return res.status(400).json({ error: 'Grupo da ata não configurado' });
     }
+
+    console.log('📱 GroupId da ata (do banco):', config.ata_group_id);
 
     const notifier = new AtaNotifier(getClient());
     notifier.getGroupId = () => config.ata_group_id;
