@@ -61,7 +61,7 @@ class GoogleSheetsService {
   }
 
   async getGestaoCompartilhada(spreadsheetId) {
-    const rows = await this.readSheet(spreadsheetId, 'GESTÃO COMPARTILHADA!A4:N1000');
+    const rows = await this.readSheet(spreadsheetId, "'GESTÃO COMPARTILHADA'!A4:N1000");
 
     if (rows.length === 0) return [];
 
@@ -81,7 +81,7 @@ class GoogleSheetsService {
   }
 
   async getSolicitacoesCompra(spreadsheetId) {
-    const rows = await this.readSheet(spreadsheetId, 'SC!A2:L1000');
+    const rows = await this.readSheet(spreadsheetId, "'SC'!A2:L1000");
 
     if (rows.length === 0) return [];
 
