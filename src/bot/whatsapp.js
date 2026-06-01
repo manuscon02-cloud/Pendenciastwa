@@ -54,18 +54,35 @@ async function initWhatsApp(messageHandler) {
   } else {
     console.log(`📁 Usando diretório de autenticação: ${authPath}`);
 
-    // Limpar locks do Chromium (arquivos SingletonLock/Cookie)
+    // Limpar locks do Chromium em todos os locais possíveis
     try {
+      const possiblePaths = [
+        authPath,
+        path.join(authPath, 'session'),
+        path.join(authPath, 'session-default')
+      ];
+
       const lockFiles = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
-      lockFiles.forEach(file => {
-        const lockPath = path.join(authPath, 'session', file);
-        if (fs.existsSync(lockPath)) {
-          fs.unlinkSync(lockPath);
-          console.log(`🔓 Lock removido: ${file}`);
+
+      possiblePaths.forEach(dir => {
+        if (fs.existsSync(dir)) {
+          lockFiles.forEach(file => {
+            const lockPath = path.join(dir, file);
+            if (fs.existsSync(lockPath)) {
+              fs.unlinkSync(lockPath);
+              console.log(`🔓 Lock removido: ${lockPath}`);
+            }
+          });
         }
       });
+
+      // Listar conteúdo do authPath para debug
+      if (fs.existsSync(authPath)) {
+        const files = fs.readdirSync(authPath);
+        console.log(`📂 Conteúdo de ${authPath}:`, files.slice(0, 10));
+      }
     } catch (err) {
-      console.log('⚠️  Não foi possível remover locks:', err.message);
+      console.log('⚠️  Erro ao remover locks:', err.message);
     }
   }
 
