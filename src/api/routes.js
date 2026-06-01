@@ -327,12 +327,17 @@ router.post('/ata/trigger/pos-reuniao', async (req, res) => {
     const db = getDB();
     const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
 
-    if (!config || !config.ata_group_id) {
+    let groupId = config?.ata_group_id;
+    if (!groupId || groupId === 'undefined') {
+      groupId = process.env.GROUP_ID;
+    }
+
+    if (!groupId) {
       return res.status(400).json({ error: 'Grupo da ata não configurado' });
     }
 
     const notifier = new AtaNotifier(getClient());
-    notifier.getGroupId = () => config.ata_group_id;
+    notifier.getGroupId = () => groupId;
     await notifier.sendPosReuniao();
 
     res.json({ success: true, message: 'Relatório pós-reunião enviado!' });
@@ -405,12 +410,17 @@ router.post('/ata/trigger/resumo', async (req, res) => {
     const db = getDB();
     const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
 
-    if (!config || !config.ata_group_id) {
+    let groupId = config?.ata_group_id;
+    if (!groupId || groupId === 'undefined') {
+      groupId = process.env.GROUP_ID;
+    }
+
+    if (!groupId) {
       return res.status(400).json({ error: 'Grupo da ata não configurado' });
     }
 
     const notifier = new AtaNotifier(getClient());
-    notifier.getGroupId = () => config.ata_group_id;
+    notifier.getGroupId = () => groupId;
     await notifier.sendResumoFimDia();
 
     res.json({ success: true, message: 'Resumo do dia enviado!' });
