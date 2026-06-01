@@ -350,14 +350,21 @@ router.post('/ata/trigger/alerta', async (req, res) => {
 
     console.log('🔍 Config lida do banco:', config);
 
-    if (!config || !config.ata_group_id) {
+    // Se não tiver configurado ou tiver undefined, usa GROUP_ID do env
+    let groupId = config?.ata_group_id;
+    if (!groupId || groupId === 'undefined') {
+      groupId = process.env.GROUP_ID;
+      console.log('⚠️  Grupo da ata undefined, usando GROUP_ID do env:', groupId);
+    }
+
+    if (!groupId) {
       return res.status(400).json({ error: 'Grupo da ata não configurado' });
     }
 
-    console.log('📱 GroupId da ata (do banco):', config.ata_group_id);
+    console.log('📱 GroupId final que será usado:', groupId);
 
     const notifier = new AtaNotifier(getClient());
-    notifier.getGroupId = () => config.ata_group_id;
+    notifier.getGroupId = () => groupId;
     await notifier.sendAlertaUrgente();
 
     res.json({ success: true, message: 'Alerta enviado!' });
