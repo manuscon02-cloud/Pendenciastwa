@@ -25,11 +25,28 @@ class PendenciasAnalyzer {
     const amanha = new Date(hoje);
     amanha.setDate(amanha.getDate() + 1);
 
-    const atrasadas = data.filter(item =>
+    // Filtrar apenas itens que não estão concluídos
+    const ativos = data.filter(item => {
+      const situacao = (item.Situacao || '').toLowerCase();
+      const dataConclusao = (item.DataConclusao || '').trim();
+      return !situacao.includes('concluído') &&
+             !situacao.includes('concluida') &&
+             dataConclusao === '';
+    });
+
+    // Concluídas hoje
+    const concluidasHoje = data.filter(item => {
+      if (!item.DataConclusao) return false;
+      const dataConclusao = googleSheets.parseDate(item.DataConclusao);
+      if (!dataConclusao) return false;
+      return dataConclusao.toDateString() === hoje.toDateString();
+    });
+
+    const atrasadas = ativos.filter(item =>
       item.Situacao && item.Situacao.toLowerCase().includes('atrasado')
     );
 
-    const emAndamento = data.filter(item =>
+    const emAndamento = ativos.filter(item =>
       item.Situacao && item.Situacao.toLowerCase().includes('em andamento')
     );
 
@@ -40,15 +57,15 @@ class PendenciasAnalyzer {
       return prazo <= amanha;
     });
 
-    const aguardandoAprovacao = data.filter(item =>
+    const aguardandoAprovacao = ativos.filter(item =>
       item.Observacoes &&
       (item.Observacoes.toLowerCase().includes('aguardando aprovação') ||
-       item.Observacoes.toLowerCase().includes('aguardando liberação'))
+       item.Observacoes.toLowerCase().includes('aguardando liberação') ||
+       item.Observacoes.toLowerCase().includes('aguardando retorno'))
     );
 
-    const semPrazo = data.filter(item =>
-      item.Situacao &&
-      item.Situacao.toLowerCase().includes('em andamento') &&
+    // CRÍTICO: itens ativos sem prazo definido
+    const semPrazo = ativos.filter(item =>
       (!item.Prazo || item.Prazo.trim() === '')
     );
 
@@ -59,28 +76,36 @@ class PendenciasAnalyzer {
     });
 
     return {
-      total: data.length,
+      total: ativos.length,
       atrasadas: atrasadas.length,
       emAndamento: emAndamento.length,
       prazoProximo: prazoProximo.length,
       aguardandoAprovacao: aguardandoAprovacao.length,
       semPrazo: semPrazo.length,
+      concluidasHoje: concluidasHoje.length,
       porSetor,
       detalhes: {
-        atrasadas: atrasadas.slice(0, 10),
-        prazoProximo: prazoProximo.slice(0, 10),
-        aguardandoAprovacao: aguardandoAprovacao.slice(0, 5),
-        semPrazo: semPrazo.slice(0, 10)
+        atrasadas,
+        prazoProximo,
+        aguardandoAprovacao,
+        semPrazo,
+        concluidasHoje
       }
     };
   }
 
   analyzeSC(data) {
-    const urgentes = data.filter(item =>
+    // NOVO: Filtrar SC não encerradas (coluna "Encerrado" vazia ou diferente de "SIM")
+    const ativas = data.filter(item => {
+      const encerrado = (item.Encerrado || '').trim().toUpperCase();
+      return encerrado !== 'SIM' && encerrado !== 'X' && encerrado !== 'ENCERRADO';
+    });
+
+    const urgentes = ativas.filter(item =>
       item.Situacao && item.Situacao.toUpperCase().includes('URGENTE')
     );
 
-    const aprovadoAtrasado = data.filter(item =>
+    const aprovadoAtrasado = ativas.filter(item =>
       item.StatusSC && item.StatusSC.toLowerCase().includes('aprovado atrasado')
     );
 
@@ -99,14 +124,14 @@ class PendenciasAnalyzer {
     });
 
     return {
-      total: data.length,
+      total: ativas.length,
       urgentes: urgentes.length,
       aprovadoAtrasado: aprovadoAtrasado.length,
       porResponsavel,
       detalhes: {
-        urgentes: urgentes.slice(0, 10),
-        maisAntigas: maisAntigas.slice(0, 10),
-        aprovadoAtrasado: aprovadoAtrasado.slice(0, 5)
+        urgentes,
+        maisAntigas,
+        aprovadoAtrasado
       }
     };
   }
@@ -117,13 +142,15 @@ class PendenciasAnalyzer {
       scAtrasadas: analysis.sc.aprovadoAtrasado,
       tarefasAtrasadas: analysis.gestao.atrasadas,
       aguardandoAprovacao: analysis.gestao.aguardandoAprovacao,
-      prazoHoje: analysis.gestao.prazoProximo
+      prazoHoje: analysis.gestao.prazoProximo,
+      semPrazo: analysis.gestao.semPrazo
     };
 
     critical.hasIssues = critical.scUrgentes > 0 ||
                          critical.scAtrasadas > 0 ||
                          critical.tarefasAtrasadas > 0 ||
-                         critical.aguardandoAprovacao > 0;
+                         critical.aguardandoAprovacao > 0 ||
+                         critical.semPrazo > 0;
 
     return critical;
   }

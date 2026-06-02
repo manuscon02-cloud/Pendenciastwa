@@ -429,4 +429,65 @@ router.post('/ata/trigger/resumo', async (req, res) => {
   }
 });
 
+// ── PREVIEW/APROVAÇÃO ─────────────────────────────────────────────────────────
+router.get('/ata/preview', async (req, res) => {
+  try {
+    const analyzer = require('../sheets/analyzer');
+    const reportBuilder = require('../sheets/reportBuilder');
+
+    const analysis = await analyzer.analyze();
+    const preview = reportBuilder.buildPreview(analysis);
+
+    res.json({
+      success: true,
+      preview
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/ata/approve-and-send', async (req, res) => {
+  try {
+    const { tipo } = req.body; // 'posReuniao', 'alerta', 'resumoDia'
+
+    if (!['posReuniao', 'alerta', 'resumoDia'].includes(tipo)) {
+      return res.status(400).json({ error: 'Tipo inválido. Use: posReuniao, alerta ou resumoDia' });
+    }
+
+    const AtaNotifier = require('../sheets/notifier');
+    const { getClient } = require('../bot/whatsapp');
+    const db = getDB();
+    const config = db.prepare('SELECT ata_group_id FROM ata_config WHERE id = 1').get();
+
+    let groupId = config?.ata_group_id;
+    if (!groupId || groupId === 'undefined') {
+      groupId = process.env.GROUP_ID;
+    }
+
+    if (!groupId) {
+      return res.status(400).json({ error: 'Grupo da ata não configurado' });
+    }
+
+    const notifier = new AtaNotifier(getClient());
+    notifier.getGroupId = () => groupId;
+
+    switch (tipo) {
+      case 'posReuniao':
+        await notifier.sendPosReuniao();
+        break;
+      case 'alerta':
+        await notifier.sendAlertaUrgente();
+        break;
+      case 'resumoDia':
+        await notifier.sendResumoFimDia();
+        break;
+    }
+
+    res.json({ success: true, message: `Mensagem "${tipo}" aprovada e enviada!` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

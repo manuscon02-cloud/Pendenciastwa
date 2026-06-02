@@ -1,61 +1,102 @@
 class ReportBuilder {
   buildPosReuniao(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
-    const critical = analysis.sc?.detalhes?.urgentes?.slice(0, 4) || [];
-    const tarefasCriticas = analysis.gestao?.detalhes?.aguardandoAprovacao?.slice(0, 3) || [];
 
-    let msg = `📊 RELATÓRIO PÓS-REUNIÃO - ${hoje}\n\n`;
+    let msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📊 RELATÓRIO PÓS-REUNIÃO\n`;
+    msg += `📅 ${hoje}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
+    // 1. SC URGENTES (detalhadas)
     if (analysis.sc.urgentes > 0) {
-      msg += `🔴 ${analysis.sc.urgentes} SC URGENTES\n`;
-      critical.forEach(sc => {
+      msg += `🔴 SC URGENTES (${analysis.sc.urgentes})\n\n`;
+
+      analysis.sc.detalhes.urgentes.forEach((sc, index) => {
+        const numero = sc.SC || 'S/N';
+        const desc = sc.Descricao || 'Sem descrição';
+        const resp = sc.Responsavel || 'Não definido';
         const dias = sc.DiasEmAberto || '?';
-        const desc = this.truncate(sc.Descricao, 40);
-        const resp = sc.Responsavel || '?';
-        msg += `• SC ${sc.SC} - ${desc}\n  Responsável: ${resp} (${dias}d)\n`;
+        const obra = sc.Obra || '-';
+
+        msg += `${index + 1}. SC ${numero}\n`;
+        msg += `   📝 ${desc}\n`;
+        msg += `   👤 Responsável: ${resp}\n`;
+        msg += `   🏗️ Obra: ${obra}\n`;
+        msg += `   ⏰ ${dias} dias em aberto\n\n`;
       });
-      msg += '\n';
     }
 
-    if (analysis.gestao.aguardandoAprovacao > 0 || analysis.gestao.atrasadas > 0) {
-      const total = analysis.gestao.aguardandoAprovacao + analysis.gestao.atrasadas;
-      msg += `⚠️ TAREFAS CRÍTICAS: ${total}\n`;
+    // 2. TAREFAS ATRASADAS (detalhadas)
+    if (analysis.gestao.atrasadas > 0) {
+      msg += `⚠️ TAREFAS ATRASADAS (${analysis.gestao.atrasadas})\n\n`;
 
-      if (analysis.gestao.aguardandoAprovacao > 0) {
-        msg += `• ${analysis.gestao.aguardandoAprovacao} aguardando aprovação\n`;
-      }
+      analysis.gestao.detalhes.atrasadas.slice(0, 10).forEach((item, index) => {
+        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const resp = item.Responsavel || 'Não definido';
+        const prazo = item.Prazo || 'Sem prazo';
+        const setor = item.Setor || '-';
+        const obs = item.Observacoes ? `\n   💬 ${item.Observacoes}` : '';
 
-      if (analysis.gestao.atrasadas > 0) {
-        const setores = Object.entries(analysis.gestao.porSetor)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3)
-          .map(([setor, qtd]) => `${setor} (${qtd})`)
-          .join(', ');
-        msg += `• ${analysis.gestao.atrasadas} atrasadas: ${setores}\n`;
+        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `   👤 Responsável: ${resp}\n`;
+        msg += `   🏢 Setor: ${setor}\n`;
+        msg += `   📅 Prazo: ${prazo}${obs}\n\n`;
+      });
+
+      if (analysis.gestao.atrasadas > 10) {
+        msg += `   ... e mais ${analysis.gestao.atrasadas - 10} tarefas atrasadas\n\n`;
       }
-      msg += '\n';
     }
 
+    // 3. AGUARDANDO APROVAÇÃO
+    if (analysis.gestao.aguardandoAprovacao > 0) {
+      msg += `⏳ AGUARDANDO APROVAÇÃO/RETORNO (${analysis.gestao.aguardandoAprovacao})\n\n`;
+
+      analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 8).forEach((item, index) => {
+        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const resp = item.Responsavel || 'Não definido';
+        const obs = item.Observacoes || 'Sem observação';
+
+        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `   👤 ${resp}\n`;
+        msg += `   💬 ${obs}\n\n`;
+      });
+
+      if (analysis.gestao.aguardandoAprovacao > 8) {
+        msg += `   ... e mais ${analysis.gestao.aguardandoAprovacao - 8}\n\n`;
+      }
+    }
+
+    // 4. CRÍTICO: TAREFAS SEM PRAZO DEFINIDO
     if (analysis.gestao.semPrazo > 0) {
-      msg += `📅 PRAZOS NÃO CADASTRADOS: ${analysis.gestao.semPrazo}\n`;
-      analysis.gestao.detalhes.semPrazo.slice(0, 5).forEach(item => {
-        const resp = item.Responsavel || 'Sem responsável';
-        const acao = this.truncate(item.Acao || item.Ocorrencia, 40);
-        msg += `• ${resp} - ${acao}\n`;
+      msg += `🚨 URGENTE: PRAZOS NÃO CADASTRADOS (${analysis.gestao.semPrazo})\n\n`;
+      msg += `As seguintes tarefas estão ativas mas SEM prazo definido.\n`;
+      msg += `Por favor, cadastrar prazos urgentemente:\n\n`;
+
+      analysis.gestao.detalhes.semPrazo.slice(0, 10).forEach((item, index) => {
+        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const resp = item.Responsavel || 'Não definido';
+        const setor = item.Setor || '-';
+
+        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `   👤 ${resp} (${setor})\n\n`;
       });
-      msg += '\n';
+
+      if (analysis.gestao.semPrazo > 10) {
+        msg += `   ... e mais ${analysis.gestao.semPrazo - 10}\n\n`;
+      }
     }
 
-    if (analysis.sc.aprovadoAtrasado > 0) {
-      msg += `📋 Total: ${analysis.sc.aprovadoAtrasado} SC aprovadas atrasadas\n`;
-    }
-
-    if (!this.hasCriticalIssues(analysis) && analysis.gestao.semPrazo === 0) {
-      msg = `📊 RELATÓRIO PÓS-REUNIÃO - ${hoje}\n\n`;
-      msg += `✅ Tudo sob controle\n`;
-      msg += `• ${analysis.gestao.emAndamento} tarefas em andamento\n`;
-      msg += `• ${analysis.sc.total} SC em processo\n`;
-    }
+    // 5. RESUMO NUMÉRICO
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📊 RESUMO GERAL\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `• SC urgentes: ${analysis.sc.urgentes}\n`;
+    msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
+    msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
+    msg += `• Aguardando aprovação: ${analysis.gestao.aguardandoAprovacao}\n`;
+    msg += `• ⚠️ Sem prazo: ${analysis.gestao.semPrazo}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
     return msg.trim();
   }
@@ -63,99 +104,175 @@ class ReportBuilder {
   buildAlertaUrgente(analysis) {
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-    // Mensagem sem asteriscos (formatação) para evitar erro do WhatsApp
-    let msg = `⏰ ALERTA - ${hora}\n\n`;
+    let msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `⏰ ALERTA INTERMEDIÁRIO - ${hora}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    const urgentes = analysis.sc?.detalhes?.urgentes?.slice(0, 3) || [];
+    let hasContent = false;
+
+    // SC URGENTES
+    const urgentes = analysis.sc?.detalhes?.urgentes?.slice(0, 5) || [];
     if (urgentes.length > 0) {
-      msg += `🚨 ${urgentes.length} SC URGENTES\n`;
-      urgentes.forEach(sc => {
+      hasContent = true;
+      msg += `🚨 SC URGENTES (${urgentes.length})\n\n`;
+
+      urgentes.forEach((sc, index) => {
+        const numero = sc.SC || 'S/N';
+        const desc = this.truncate(sc.Descricao, 60);
+        const resp = sc.Responsavel || 'Não definido';
         const dias = sc.DiasEmAberto || '?';
-        const desc = this.truncate(sc.Descricao, 35);
-        msg += `• SC ${sc.SC} - ${desc} (${dias}d)\n`;
+
+        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
+        msg += `   👤 ${resp} | ⏰ ${dias}d\n\n`;
       });
-      msg += '\n';
     }
 
+    // SC MAIS ANTIGAS (>7 dias)
     const antigas = analysis.sc?.detalhes?.maisAntigas?.slice(0, 3) || [];
     if (antigas.length > 0 && antigas[0]?.DiasEmAberto > 7) {
-      msg += `⏳ SC MAIS ANTIGAS\n`;
-      antigas.slice(0, 2).forEach(sc => {
+      hasContent = true;
+      msg += `⏳ SC MAIS ANTIGAS\n\n`;
+
+      antigas.forEach((sc, index) => {
+        const numero = sc.SC || 'S/N';
+        const desc = this.truncate(sc.Descricao, 60);
         const dias = sc.DiasEmAberto || '?';
-        const desc = this.truncate(sc.Descricao, 35);
-        msg += `• SC ${sc.SC} - ${dias} dias em aberto\n`;
+
+        msg += `${index + 1}. SC ${numero} - ${dias} dias\n`;
+        msg += `   ${desc}\n\n`;
       });
-      msg += '\n';
     }
 
+    // TAREFAS COM PRAZO HOJE/AMANHÃ
     const prazoHoje = analysis.gestao?.detalhes?.prazoProximo || [];
     if (prazoHoje.length > 0) {
-      msg += `📅 ${prazoHoje.length} TAREFAS COM PRAZO HOJE/AMANHÃ\n`;
-      prazoHoje.slice(0, 3).forEach(item => {
-        const resp = item.Responsavel || 'Sem responsável';
-        const acao = this.truncate(item.Acao || item.Ocorrencia, 40);
+      hasContent = true;
+      msg += `📅 PRAZOS HOJE/AMANHÃ (${prazoHoje.length})\n\n`;
+
+      prazoHoje.slice(0, 5).forEach((item, index) => {
+        const ocorrencia = this.truncate(item.Ocorrencia || item.Acao, 50);
+        const resp = item.Responsavel || 'Não definido';
         const prazo = item.Prazo || '?';
-        msg += `• ${resp} - ${acao} (${prazo})\n`;
+
+        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `   👤 ${resp} | 📅 ${prazo}\n\n`;
       });
-      if (prazoHoje.length > 3) {
-        msg += `  ...e mais ${prazoHoje.length - 3}\n`;
+
+      if (prazoHoje.length > 5) {
+        msg += `   ... e mais ${prazoHoje.length - 5} tarefas\n\n`;
       }
     }
 
-    if (urgentes.length === 0 && (!antigas[0] || antigas[0].DiasEmAberto <= 7) && prazoHoje.length === 0) {
-      console.log('ℹ️  Nenhum item crítico para alertar');
+    // COBRANÇA: TAREFAS SEM PRAZO
+    if (analysis.gestao.semPrazo > 0) {
+      hasContent = true;
+      msg += `⚠️ LEMBRETE: ${analysis.gestao.semPrazo} tarefas SEM prazo cadastrado\n`;
+      msg += `Por favor, definir prazos urgentemente!\n\n`;
+    }
+
+    if (!hasContent) {
       return null;
     }
 
-    console.log('✅ Mensagem de alerta construída:', msg.substring(0, 100) + '...');
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
     return msg.trim();
   }
 
   buildResumoFimDia(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
-    let msg = `📌 RESUMO DO DIA - ${hoje}\n\n`;
+    let msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📌 RESUMO DO DIA\n`;
+    msg += `📅 ${hoje}\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    msg += `📊 Visão Geral\n`;
+    // 1. ATIVIDADES CONCLUÍDAS HOJE
+    if (analysis.gestao.concluidasHoje > 0) {
+      msg += `✅ CONCLUÍDAS HOJE (${analysis.gestao.concluidasHoje})\n\n`;
+
+      analysis.gestao.detalhes.concluidasHoje.forEach((item, index) => {
+        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const resp = item.Responsavel || 'Não definido';
+        const setor = item.Setor || '-';
+        const obs = item.Observacoes ? `\n   💬 ${item.Observacoes}` : '';
+
+        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `   👤 ${resp} (${setor})${obs}\n\n`;
+      });
+    } else {
+      msg += `ℹ️ Nenhuma atividade concluída hoje\n\n`;
+    }
+
+    // 2. VISÃO GERAL DO DIA
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📊 SITUAÇÃO ATUAL\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `• SC urgentes: ${analysis.sc.urgentes}\n`;
     msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
     msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
     msg += `• Tarefas em andamento: ${analysis.gestao.emAndamento}\n`;
     msg += `• Aguardando aprovação: ${analysis.gestao.aguardandoAprovacao}\n`;
+
     if (analysis.gestao.semPrazo > 0) {
-      msg += `• ⚠️ Sem prazo cadastrado: ${analysis.gestao.semPrazo}\n`;
+      msg += `• ⚠️ Sem prazo: ${analysis.gestao.semPrazo}\n`;
     }
     msg += '\n';
 
-    if (analysis.sc.urgentes > 0 || analysis.gestao.atrasadas > 0) {
-      msg += `⚠️ Atenção necessária amanhã\n`;
+    // 3. PRIORIDADES PARA AMANHÃ
+    if (analysis.sc.urgentes > 0 || analysis.gestao.atrasadas > 0 || analysis.gestao.semPrazo > 0) {
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `🎯 PRIORIDADES PARA AMANHÃ\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
       if (analysis.sc.urgentes > 0) {
         msg += `• Priorizar ${analysis.sc.urgentes} SC urgentes\n`;
       }
 
-      const setoresTop = Object.entries(analysis.gestao.porSetor)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
+      if (analysis.gestao.atrasadas > 0) {
+        const setoresTop = Object.entries(analysis.gestao.porSetor)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3);
 
-      if (setoresTop.length > 0) {
-        msg += `• Setores com mais pendências:\n`;
-        setoresTop.forEach(([setor, qtd]) => {
-          msg += `  - ${setor}: ${qtd}\n`;
-        });
+        if (setoresTop.length > 0) {
+          msg += `• Setores com mais pendências:\n`;
+          setoresTop.forEach(([setor, qtd]) => {
+            msg += `  - ${setor}: ${qtd}\n`;
+          });
+        }
+      }
+
+      if (analysis.gestao.semPrazo > 0) {
+        msg += `• URGENTE: Cadastrar prazos (${analysis.gestao.semPrazo} pendentes)\n`;
       }
     } else {
-      msg += `✅ Bom trabalho hoje!`;
+      msg += `✅ Excelente trabalho hoje!\n`;
+      msg += `Continue assim amanhã! 💪`;
     }
 
+    msg += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
     return msg.trim();
   }
 
-  hasCriticalIssues(analysis) {
-    return analysis.sc.urgentes > 0 ||
-           analysis.sc.aprovadoAtrasado > 0 ||
-           analysis.gestao.atrasadas > 0 ||
-           analysis.gestao.aguardandoAprovacao > 0;
+  // Método para preview/aprovação
+  buildPreview(analysis) {
+    const preview = {
+      timestamp: new Date().toLocaleString('pt-BR'),
+      criticas: {
+        scUrgentes: analysis.sc.urgentes,
+        scAtrasadas: analysis.sc.aprovadoAtrasado,
+        tarefasAtrasadas: analysis.gestao.atrasadas,
+        aguardandoAprovacao: analysis.gestao.aguardandoAprovacao,
+        semPrazo: analysis.gestao.semPrazo,
+        concluidasHoje: analysis.gestao.concluidasHoje
+      },
+      mensagens: {
+        posReuniao: this.buildPosReuniao(analysis),
+        alerta: this.buildAlertaUrgente(analysis),
+        resumoDia: this.buildResumoFimDia(analysis)
+      }
+    };
+
+    return preview;
   }
 
   truncate(str, maxLen) {
