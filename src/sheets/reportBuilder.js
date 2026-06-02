@@ -163,11 +163,24 @@ class ReportBuilder {
       }
     }
 
-    // COBRANÇA: TAREFAS SEM PRAZO
+    // COBRANÇA: TAREFAS SEM PRAZO (DETALHADA)
     if (analysis.gestao.semPrazo > 0) {
       hasContent = true;
-      msg += `⚠️ LEMBRETE: ${analysis.gestao.semPrazo} tarefas SEM prazo cadastrado\n`;
-      msg += `Por favor, definir prazos urgentemente!\n\n`;
+      msg += `🚨 SEM PRAZO CADASTRADO (${analysis.gestao.semPrazo})\n\n`;
+      msg += `⚠️ As seguintes pessoas precisam cadastrar prazos URGENTEMENTE:\n\n`;
+
+      analysis.gestao.detalhes.semPrazo.slice(0, 8).forEach((item, index) => {
+        const ocorrencia = this.truncate(item.Ocorrencia || item.Acao, 50);
+        const resp = item.Responsavel || 'Não definido';
+        const setor = item.Setor || '-';
+
+        msg += `${index + 1}. 👤 ${resp} (${setor})\n`;
+        msg += `   📋 ${ocorrencia}\n\n`;
+      });
+
+      if (analysis.gestao.semPrazo > 8) {
+        msg += `   ... e mais ${analysis.gestao.semPrazo - 8} pessoas\n\n`;
+      }
     }
 
     if (!hasContent) {
@@ -242,7 +255,21 @@ class ReportBuilder {
       }
 
       if (analysis.gestao.semPrazo > 0) {
-        msg += `• URGENTE: Cadastrar prazos (${analysis.gestao.semPrazo} pendentes)\n`;
+        msg += `\n🚨 URGENTE: CADASTRAR PRAZOS (${analysis.gestao.semPrazo})\n`;
+
+        const responsaveisSemPrazo = {};
+        analysis.gestao.detalhes.semPrazo.forEach(item => {
+          const resp = item.Responsavel || 'Não definido';
+          responsaveisSemPrazo[resp] = (responsaveisSemPrazo[resp] || 0) + 1;
+        });
+
+        const topResponsaveis = Object.entries(responsaveisSemPrazo)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8);
+
+        topResponsaveis.forEach(([resp, qtd]) => {
+          msg += `  • ${resp}: ${qtd} tarefa${qtd > 1 ? 's' : ''}\n`;
+        });
       }
     } else {
       msg += `✅ Excelente trabalho hoje!\n`;
