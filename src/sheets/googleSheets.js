@@ -99,13 +99,14 @@ class GoogleSheetsService {
   }
 
   async getSolicitacoesCompra(spreadsheetId) {
-    const rows = await this.readSheet(spreadsheetId, "'SC'!A2:M1000");
+    const rows = await this.readSheet(spreadsheetId, "'SC'!A2:P1000");
 
     if (rows.length === 0) return [];
 
     const header = ['SC', 'DataAbertura', 'DataNecessidade', 'DataAprovacao',
                     'Descricao', 'Obra', 'Projeto', 'Responsavel',
-                    'DiasEmAberto', 'Situacao', 'StatusSC', 'Extra', 'Encerrado'];
+                    'DiasEmAberto', 'Situacao', 'StatusSC', 'PC',
+                    'PrazoEntrega', 'SituacaoPedido', 'Encerrado', 'Observacao'];
 
     return rows
       .filter(row => row[0] && row[0].trim() !== '')

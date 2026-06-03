@@ -7,7 +7,7 @@ class ReportBuilder {
     msg += `📅 ${hoje}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    // 1. SC URGENTES (detalhadas)
+    // 1. SC URGENTES (todas, com contexto completo)
     if (analysis.sc.urgentes > 0) {
       msg += `🔴 SC URGENTES (${analysis.sc.urgentes})\n\n`;
 
@@ -16,74 +16,79 @@ class ReportBuilder {
         const desc = sc.Descricao || 'Sem descrição';
         const resp = sc.Responsavel || 'Não definido';
         const dias = sc.DiasEmAberto || '?';
-        const obra = sc.Obra || '-';
+        const obra = sc.Obra || 'Obra não informada';
+        const projeto = sc.Projeto ? ` - ${sc.Projeto}` : '';
 
-        msg += `${index + 1}. SC ${numero}\n`;
-        msg += `   📝 ${desc}\n`;
-        msg += `   👤 Responsável: ${resp}\n`;
-        msg += `   🏗️ Obra: ${obra}\n`;
-        msg += `   ⏰ ${dias} dias em aberto\n\n`;
+        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
+        msg += `   👤 ${resp} | ⏰ ${dias} dias\n\n`;
       });
     }
 
-    // 2. TAREFAS ATRASADAS (detalhadas)
+    // 2. TAREFAS ATRASADAS (top 10, com contexto completo)
     if (analysis.gestao.atrasadas > 0) {
       msg += `⚠️ TAREFAS ATRASADAS (${analysis.gestao.atrasadas})\n\n`;
 
       analysis.gestao.detalhes.atrasadas.slice(0, 10).forEach((item, index) => {
-        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
         const prazo = item.Prazo || 'Sem prazo';
-        const setor = item.Setor || '-';
+        const obra = item.Obra || 'Obra não informada';
+        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
+        const setor = item.Setor || 'Setor não informado';
         const obs = item.Observacoes ? `\n   💬 ${item.Observacoes}` : '';
 
-        msg += `${index + 1}. ${ocorrencia}\n`;
-        msg += `   👤 Responsável: ${resp}\n`;
-        msg += `   🏢 Setor: ${setor}\n`;
-        msg += `   📅 Prazo: ${prazo}${obs}\n\n`;
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
+        msg += `   👤 ${resp} (${setor}) | 📅 ${prazo}${obs}\n\n`;
       });
 
       if (analysis.gestao.atrasadas > 10) {
-        msg += `   ... e mais ${analysis.gestao.atrasadas - 10} tarefas atrasadas\n\n`;
+        msg += `   ... e mais ${analysis.gestao.atrasadas - 10} tarefas\n\n`;
       }
     }
 
-    // 3. AGUARDANDO APROVAÇÃO
+    // 3. AGUARDANDO APROVAÇÃO (top 10, com contexto)
     if (analysis.gestao.aguardandoAprovacao > 0) {
       msg += `⏳ AGUARDANDO APROVAÇÃO/RETORNO (${analysis.gestao.aguardandoAprovacao})\n\n`;
 
-      analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 8).forEach((item, index) => {
-        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+      analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 10).forEach((item, index) => {
+        const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
+        const obra = item.Obra || 'Obra não informada';
+        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
         const obs = item.Observacoes || 'Sem observação';
 
-        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
         msg += `   👤 ${resp}\n`;
         msg += `   💬 ${obs}\n\n`;
       });
 
-      if (analysis.gestao.aguardandoAprovacao > 8) {
-        msg += `   ... e mais ${analysis.gestao.aguardandoAprovacao - 8}\n\n`;
+      if (analysis.gestao.aguardandoAprovacao > 10) {
+        msg += `   ... e mais ${analysis.gestao.aguardandoAprovacao - 10}\n\n`;
       }
     }
 
-    // 4. CRÍTICO: TAREFAS SEM PRAZO DEFINIDO
+    // 4. CRÍTICO: TAREFAS SEM PRAZO (top 10, com contexto completo)
     if (analysis.gestao.semPrazo > 0) {
       msg += `🚨 URGENTE: PRAZOS NÃO CADASTRADOS (${analysis.gestao.semPrazo})\n\n`;
-      msg += `As seguintes tarefas estão ativas mas SEM prazo definido.\n`;
-      msg += `Por favor, cadastrar prazos urgentemente:\n\n`;
+      msg += `⚠️ Tarefas ativas SEM prazo definido. Cadastrar urgentemente:\n\n`;
 
       analysis.gestao.detalhes.semPrazo.slice(0, 10).forEach((item, index) => {
-        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
-        const setor = item.Setor || '-';
+        const obra = item.Obra || 'Obra não informada';
+        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
+        const setor = item.Setor || 'Setor não informado';
 
-        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
         msg += `   👤 ${resp} (${setor})\n\n`;
       });
 
       if (analysis.gestao.semPrazo > 10) {
-        msg += `   ... e mais ${analysis.gestao.semPrazo - 10}\n\n`;
+        msg += `   ... e mais ${analysis.gestao.semPrazo - 10} tarefas\n\n`;
       }
     }
 
@@ -110,24 +115,32 @@ class ReportBuilder {
 
     let hasContent = false;
 
-    // SC URGENTES
+    // SC URGENTES (top 5, com contexto)
     const urgentes = analysis.sc?.detalhes?.urgentes?.slice(0, 5) || [];
     if (urgentes.length > 0) {
       hasContent = true;
-      msg += `🚨 SC URGENTES (${urgentes.length})\n\n`;
+      const totalUrgentes = analysis.sc?.urgentes || urgentes.length;
+      msg += `🚨 SC URGENTES (${totalUrgentes})\n\n`;
 
       urgentes.forEach((sc, index) => {
         const numero = sc.SC || 'S/N';
-        const desc = this.truncate(sc.Descricao, 60);
+        const desc = sc.Descricao || 'Sem descrição';
         const resp = sc.Responsavel || 'Não definido';
         const dias = sc.DiasEmAberto || '?';
+        const obra = sc.Obra || 'Obra não informada';
+        const projeto = sc.Projeto ? ` - ${sc.Projeto}` : '';
 
         msg += `${index + 1}. SC ${numero} - ${desc}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
         msg += `   👤 ${resp} | ⏰ ${dias}d\n\n`;
       });
+
+      if (totalUrgentes > 5) {
+        msg += `   ... e mais ${totalUrgentes - 5} SC urgentes\n\n`;
+      }
     }
 
-    // SC MAIS ANTIGAS (>7 dias)
+    // SC MAIS ANTIGAS (>7 dias, com contexto)
     const antigas = analysis.sc?.detalhes?.maisAntigas?.slice(0, 3) || [];
     if (antigas.length > 0 && antigas[0]?.DiasEmAberto > 7) {
       hasContent = true;
@@ -135,51 +148,60 @@ class ReportBuilder {
 
       antigas.forEach((sc, index) => {
         const numero = sc.SC || 'S/N';
-        const desc = this.truncate(sc.Descricao, 60);
+        const desc = sc.Descricao || 'Sem descrição';
         const dias = sc.DiasEmAberto || '?';
+        const obra = sc.Obra || 'Obra não informada';
+        const projeto = sc.Projeto ? ` - ${sc.Projeto}` : '';
 
         msg += `${index + 1}. SC ${numero} - ${dias} dias\n`;
-        msg += `   ${desc}\n\n`;
+        msg += `   📝 ${desc}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n\n`;
       });
     }
 
-    // TAREFAS COM PRAZO HOJE/AMANHÃ
+    // TAREFAS COM PRAZO HOJE/AMANHÃ (top 10, com contexto)
     const prazoHoje = analysis.gestao?.detalhes?.prazoProximo || [];
     if (prazoHoje.length > 0) {
       hasContent = true;
       msg += `📅 PRAZOS HOJE/AMANHÃ (${prazoHoje.length})\n\n`;
 
-      prazoHoje.slice(0, 5).forEach((item, index) => {
-        const ocorrencia = this.truncate(item.Ocorrencia || item.Acao, 50);
+      prazoHoje.slice(0, 10).forEach((item, index) => {
+        const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
         const prazo = item.Prazo || '?';
+        const obra = item.Obra || 'Obra não informada';
+        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
 
-        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
         msg += `   👤 ${resp} | 📅 ${prazo}\n\n`;
       });
 
-      if (prazoHoje.length > 5) {
-        msg += `   ... e mais ${prazoHoje.length - 5} tarefas\n\n`;
+      if (prazoHoje.length > 10) {
+        msg += `   ... e mais ${prazoHoje.length - 10} tarefas\n\n`;
       }
     }
 
-    // COBRANÇA: TAREFAS SEM PRAZO (DETALHADA)
+    // COBRANÇA: TAREFAS SEM PRAZO (top 10, com contexto completo)
     if (analysis.gestao.semPrazo > 0) {
       hasContent = true;
       msg += `🚨 SEM PRAZO CADASTRADO (${analysis.gestao.semPrazo})\n\n`;
-      msg += `⚠️ As seguintes pessoas precisam cadastrar prazos URGENTEMENTE:\n\n`;
+      msg += `⚠️ Cadastrar prazos URGENTEMENTE:\n\n`;
 
-      analysis.gestao.detalhes.semPrazo.slice(0, 8).forEach((item, index) => {
-        const ocorrencia = this.truncate(item.Ocorrencia || item.Acao, 50);
+      analysis.gestao.detalhes.semPrazo.slice(0, 10).forEach((item, index) => {
+        const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
-        const setor = item.Setor || '-';
+        const obra = item.Obra || 'Obra não informada';
+        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
+        const setor = item.Setor || 'Setor não informado';
 
-        msg += `${index + 1}. 👤 ${resp} (${setor})\n`;
-        msg += `   📋 ${ocorrencia}\n\n`;
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
+        msg += `   👤 ${resp} (${setor})\n\n`;
       });
 
-      if (analysis.gestao.semPrazo > 8) {
-        msg += `   ... e mais ${analysis.gestao.semPrazo - 8} pessoas\n\n`;
+      if (analysis.gestao.semPrazo > 10) {
+        msg += `   ... e mais ${analysis.gestao.semPrazo - 10} tarefas\n\n`;
       }
     }
 
@@ -199,17 +221,20 @@ class ReportBuilder {
     msg += `📅 ${hoje}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    // 1. ATIVIDADES CONCLUÍDAS HOJE
+    // 1. ATIVIDADES CONCLUÍDAS HOJE (todas, com contexto completo)
     if (analysis.gestao.concluidasHoje > 0) {
       msg += `✅ CONCLUÍDAS HOJE (${analysis.gestao.concluidasHoje})\n\n`;
 
       analysis.gestao.detalhes.concluidasHoje.forEach((item, index) => {
-        const ocorrencia = item.Ocorrencia || item.Acao || 'Sem descrição';
+        const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
-        const setor = item.Setor || '-';
+        const obra = item.Obra || 'Obra não informada';
+        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
+        const setor = item.Setor || 'Setor não informado';
         const obs = item.Observacoes ? `\n   💬 ${item.Observacoes}` : '';
 
-        msg += `${index + 1}. ${ocorrencia}\n`;
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   🏗️ ${obra}${projeto}\n`;
         msg += `   👤 ${resp} (${setor})${obs}\n\n`;
       });
     } else {
