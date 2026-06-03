@@ -196,14 +196,14 @@ function initScheduler() {
     console.log(`📅 Agendado: ${s.hour}:${String(s.minute).padStart(2, '0')} (todos os dias)`);
   });
 
-  // Relatório diário fixo às 17:30
-  const reportJob = cron.schedule('30 17 * * *', async () => {
-    console.log('📊 Enviando relatório diário 17:30...');
-    await sendDailyReport();
-  }, { timezone: 'America/Sao_Paulo' });
-  jobs.push(reportJob);
+  // Relatório diário fixo às 17:30 - DESABILITADO (usando apenas sistema de ata)
+  // const reportJob = cron.schedule('30 17 * * *', async () => {
+  //   console.log('📊 Enviando relatório diário 17:30...');
+  //   await sendDailyReport();
+  // }, { timezone: 'America/Sao_Paulo' });
+  // jobs.push(reportJob);
 
-  console.log(`✅ ${schedules.length} horário(s) de cobrança + relatório diário 17:30`);
+  console.log(`✅ ${schedules.length} horário(s) de cobrança agendados`);
 }
 
 module.exports = { initScheduler, sendReminders, sendDailyReport };
