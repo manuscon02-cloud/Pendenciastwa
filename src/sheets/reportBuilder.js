@@ -7,11 +7,12 @@ class ReportBuilder {
     msg += `📅 ${hoje}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    // 1. SC URGENTES (todas, com contexto completo)
-    if (analysis.sc.urgentes > 0) {
-      msg += `🔴 SC URGENTES (${analysis.sc.urgentes})\n\n`;
+    // 1. SC PENDENTES
+    const scPendentes = analysis.sc?.detalhes?.todas?.slice(0, 10) || [];
+    if (scPendentes.length > 0) {
+      msg += `📋 SC PENDENTES (${analysis.sc.total})\n\n`;
 
-      analysis.sc.detalhes.urgentes.forEach((sc, index) => {
+      scPendentes.forEach((sc, index) => {
         const numero = sc.SC || 'S/N';
         const desc = sc.Descricao || 'Sem descrição';
         const resp = sc.Responsavel || 'Não definido';
@@ -23,6 +24,10 @@ class ReportBuilder {
         msg += `   🏗️ ${obra}${projeto}\n`;
         msg += `   👤 ${resp} | ⏰ ${dias} dias\n\n`;
       });
+
+      if (analysis.sc.total > 10) {
+        msg += `   ... e mais ${analysis.sc.total - 10} SC pendentes\n\n`;
+      }
     }
 
     // 2. TAREFAS ATRASADAS (top 10, com contexto completo)
