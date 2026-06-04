@@ -96,7 +96,7 @@ class ReportBuilder {
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `📊 RESUMO GERAL\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `• SC urgentes: ${analysis.sc.urgentes}\n`;
+    msg += `• SC pendentes: ${analysis.sc.total}\n`;
     msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
     msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
     msg += `• Aguardando aprovação: ${analysis.gestao.aguardandoAprovacao}\n`;
@@ -245,7 +245,7 @@ class ReportBuilder {
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `📊 SITUAÇÃO ATUAL\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `• SC urgentes: ${analysis.sc.urgentes}\n`;
+    msg += `• SC pendentes: ${analysis.sc.total}\n`;
     msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
     msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
     msg += `• Tarefas em andamento: ${analysis.gestao.emAndamento}\n`;
@@ -257,13 +257,13 @@ class ReportBuilder {
     msg += '\n';
 
     // 3. PRIORIDADES PARA AMANHÃ
-    if (analysis.sc.urgentes > 0 || analysis.gestao.atrasadas > 0 || analysis.gestao.semPrazo > 0) {
+    if (analysis.sc.total > 0 || analysis.gestao.atrasadas > 0 || analysis.gestao.semPrazo > 0) {
       msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
       msg += `🎯 PRIORIDADES PARA AMANHÃ\n`;
       msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
-      if (analysis.sc.urgentes > 0) {
-        msg += `• Priorizar ${analysis.sc.urgentes} SC urgentes\n`;
+      if (analysis.sc.total > 0) {
+        msg += `• SC pendentes: ${analysis.sc.total}\n`;
       }
 
       if (analysis.gestao.atrasadas > 0) {
