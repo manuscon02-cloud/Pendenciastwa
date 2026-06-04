@@ -115,14 +115,14 @@ class ReportBuilder {
 
     let hasContent = false;
 
-    // SC URGENTES (top 5, com contexto)
-    const urgentes = analysis.sc?.detalhes?.urgentes?.slice(0, 5) || [];
-    if (urgentes.length > 0) {
+    // SC PENDENTES (top 10)
+    const pendentes = analysis.sc?.detalhes?.todas?.slice(0, 10) || [];
+    if (pendentes.length > 0) {
       hasContent = true;
-      const totalUrgentes = analysis.sc?.urgentes || urgentes.length;
-      msg += `🚨 SC URGENTES (${totalUrgentes})\n\n`;
+      const total = analysis.sc?.total || pendentes.length;
+      msg += `📋 SC PENDENTES (${total})\n\n`;
 
-      urgentes.forEach((sc, index) => {
+      pendentes.forEach((sc, index) => {
         const numero = sc.SC || 'S/N';
         const desc = sc.Descricao || 'Sem descrição';
         const resp = sc.Responsavel || 'Não definido';
@@ -135,8 +135,8 @@ class ReportBuilder {
         msg += `   👤 ${resp} | ⏰ ${dias}d\n\n`;
       });
 
-      if (totalUrgentes > 5) {
-        msg += `   ... e mais ${totalUrgentes - 5} SC urgentes\n\n`;
+      if (total > 10) {
+        msg += `   ... e mais ${total - 10} SC pendentes\n\n`;
       }
     }
 

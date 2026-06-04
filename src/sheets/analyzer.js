@@ -99,15 +99,7 @@ class PendenciasAnalyzer {
     // Se "Encerrado?" = SIM/X/ENCERRADO → não cobra
     // Se "Encerrado?" = vazio → cobra (está pendente)
     const ativas = data.filter(item => {
-      const encerrado = (item.Encerrado || '').trim().toUpperCase();
-
-      // Se marcado como encerrado, não cobra
-      if (encerrado === 'SIM' || encerrado === 'X' || encerrado === 'ENCERRADO') {
-        return false;
-      }
-
-      // Se vazio, cobra (está pendente)
-      return true;
+      return (item.Encerrado || '').trim() === '';
     });
 
     const urgentes = ativas.filter(item =>
@@ -140,7 +132,8 @@ class PendenciasAnalyzer {
       detalhes: {
         urgentes,
         maisAntigas,
-        aprovadoAtrasado
+        aprovadoAtrasado,
+        todas: ativas
       }
     };
   }

@@ -18,7 +18,7 @@ class AtaNotifier {
     );
 
     this.jobs.push(
-      cron.schedule('0 10,12,14,16 * * 1-5', () => this.sendAlertaUrgente(), {
+      cron.schedule('0 10,16 * * 1-5', () => this.sendAlertaUrgente(), {
         timezone: 'America/Sao_Paulo'
       })
     );
@@ -31,7 +31,7 @@ class AtaNotifier {
 
     console.log('✅ Notificador de ata inicializado');
     console.log('   📅 Pós-reunião: Seg-Sex 08h30');
-    console.log('   ⚠️  Alertas urgentes: Seg-Sex 10h, 12h, 14h, 16h');
+    console.log('   ⚠️  Alertas pendentes: Seg-Sex 10h e 16h');
     console.log('   📊 Resumo fim do dia: Seg-Sex 18h');
   }
 
