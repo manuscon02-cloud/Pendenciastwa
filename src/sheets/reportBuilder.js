@@ -1,171 +1,247 @@
 class ReportBuilder {
-  // 08h30 - PÓS-REUNIÃO (ENXUTO)
+  // 08h30 - PÓS-REUNIÃO (AGRUPADO POR PESSOA)
   buildPosReuniao(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
     let msg = `📊 BOM DIA - ${hoje}\n\n`;
 
-    // 1. CRÍTICO (máximo 5 itens)
-    const criticos = [];
+    // Agrupa todos os itens críticos por pessoa
+    const porPessoa = {};
 
-    // SC Urgentes
+    // 1. SC Urgentes
     if (analysis.sc.detalhes.urgentes?.length > 0) {
-      analysis.sc.detalhes.urgentes.slice(0, 3).forEach(sc => {
-        criticos.push({
-          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`,
-          resp: sc.Responsavel,
-          urgencia: 1
+      analysis.sc.detalhes.urgentes.forEach(sc => {
+        const resp = sc.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+        porPessoa[resp].push({
+          tipo: 'SC',
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 45)}`,
+          criticidade: '🔴 URGENTE',
+          dias: sc.DiasEmAberto
         });
       });
     }
 
-    // Tarefas atrasadas
-    if (analysis.gestao.detalhes.atrasadas?.length > 0) {
-      analysis.gestao.detalhes.atrasadas.slice(0, 2).forEach(item => {
-        criticos.push({
-          texto: `${this.truncate(item.Acao, 40)} - ATRASADO`,
-          resp: item.Responsavel,
-          prazo: item.Prazo,
-          urgencia: 2
+    // 2. SC Aprovadas Atrasadas
+    if (analysis.sc.detalhes.aprovadoAtrasado?.length > 0) {
+      analysis.sc.detalhes.aprovadoAtrasado.forEach(sc => {
+        const resp = sc.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+        porPessoa[resp].push({
+          tipo: 'SC',
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 45)}`,
+          criticidade: '⚠️ Aprovada atrasada',
+          dias: sc.DiasEmAberto
         });
+      });
+    }
+
+    // 3. Tarefas Atrasadas
+    if (analysis.gestao.detalhes.atrasadas?.length > 0) {
+      analysis.gestao.detalhes.atrasadas.forEach(item => {
+        const resp = item.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+        porPessoa[resp].push({
+          tipo: 'TAREFA',
+          texto: this.truncate(item.Acao, 45),
+          criticidade: `🔴 ATRASADO`,
+          prazo: item.Prazo,
+          obs: item.Observacoes
+        });
+      });
+    }
+
+    // 4. Tarefas vencendo HOJE
+    if (analysis.gestao.detalhes.venceHoje?.length > 0) {
+      analysis.gestao.detalhes.venceHoje.forEach(item => {
+        const resp = item.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+        porPessoa[resp].push({
+          tipo: 'TAREFA',
+          texto: this.truncate(item.Acao, 45),
+          criticidade: '⏰ VENCE HOJE',
+          prazo: item.Prazo
+        });
+      });
+    }
+
+    // Ordena por quantidade (quem tem mais pendências aparece primeiro)
+    const pessoas = Object.entries(porPessoa)
+      .sort((a, b) => b[1].length - a[1].length);
+
+    if (pessoas.length > 0) {
+      msg += `🔴 CRÍTICO\n\n`;
+
+      // Mostra cada pessoa
+      pessoas.forEach(([nome, itens]) => {
+        msg += `👤 ${nome.toUpperCase()} (${itens.length})\n`;
+
+        // Mostra até 5 itens por pessoa
+        itens.slice(0, 5).forEach(item => {
+          msg += `  • ${item.texto}\n`;
+          msg += `    ${item.criticidade}`;
+          if (item.prazo) msg += ` - Prazo: ${item.prazo}`;
+          if (item.dias) msg += ` - ${item.dias}d`;
+          msg += `\n`;
+        });
+
+        if (itens.length > 5) {
+          msg += `  ... e mais ${itens.length - 5}\n`;
+        }
+
+        msg += `\n`;
+      });
+    }
+
+    // Resumo geral
+    const resumo = [];
+    if (analysis.sc.aprovadasSemPC > 0) {
+      resumo.push(`${analysis.sc.aprovadasSemPC} SC sem pedido de compra`);
+    }
+    if (analysis.gestao.aguardandoAprovacao > 0) {
+      resumo.push(`${analysis.gestao.aguardandoAprovacao} tarefas aguardando aprovação`);
+    }
+
+    if (resumo.length > 0) {
+      msg += `⚠️ ATENÇÃO\n`;
+      resumo.forEach(r => msg += `• ${r}\n`);
+      msg += `\n`;
+    }
+
+    msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `📊 Total: ${analysis.sc.total} SC | ${analysis.gestao.total} tarefas`;
+
+    return msg.trim();
+  }
+
+  // 14h - CHECKPOINT (AGRUPADO POR PESSOA)
+  buildAlertaIntermediario(analysis) {
+    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    let msg = `⏰ CHECKPOINT ${hora}\n\n`;
+    let hasContent = false;
+
+    // Agrupa pendências de hoje por pessoa
+    const porPessoa = {};
+
+    // SC Urgentes
+    if (analysis.sc.detalhes.urgentes?.length > 0) {
+      analysis.sc.detalhes.urgentes.forEach(sc => {
+        const resp = sc.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+        porPessoa[resp].push(`SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`);
       });
     }
 
     // Tarefas vencendo hoje
     if (analysis.gestao.detalhes.venceHoje?.length > 0) {
-      analysis.gestao.detalhes.venceHoje.slice(0, 2).forEach(item => {
-        criticos.push({
-          texto: `${this.truncate(item.Acao, 40)} - VENCE HOJE`,
-          resp: item.Responsavel,
-          urgencia: 1
-        });
+      analysis.gestao.detalhes.venceHoje.forEach(item => {
+        const resp = item.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+        porPessoa[resp].push(this.truncate(item.Acao, 40));
       });
     }
 
-    if (criticos.length > 0) {
-      msg += `🔴 URGENTE (${criticos.length})\n`;
-      criticos.slice(0, 5).forEach(item => {
-        msg += `• ${item.texto}`;
-        if (item.resp) msg += ` (${item.resp})`;
+    const pessoas = Object.entries(porPessoa);
+
+    if (pessoas.length > 0) {
+      hasContent = true;
+      msg += `🔴 Ainda pendente hoje:\n\n`;
+
+      pessoas.forEach(([nome, itens]) => {
+        msg += `👤 ${nome}\n`;
+        itens.slice(0, 3).forEach(texto => {
+          msg += `  • ${texto}\n`;
+        });
+        if (itens.length > 3) msg += `  ... e mais ${itens.length - 3}\n`;
         msg += `\n`;
       });
-      msg += `\n`;
     }
 
-    // 2. ATENÇÃO (resumo)
-    const atencao = [];
-    if (analysis.sc.aprovadoAtrasado > 0) {
-      atencao.push(`${analysis.sc.aprovadoAtrasado} SC aprovadas esperando andamento`);
-    }
-    if (analysis.sc.aprovadasSemPC > 0) {
-      atencao.push(`${analysis.sc.aprovadasSemPC} SC sem pedido de compra`);
-    }
-    if (analysis.gestao.aguardandoAprovacao > 0) {
-      atencao.push(`${analysis.gestao.aguardandoAprovacao} tarefas aguardando aprovação`);
-    }
-
-    if (atencao.length > 0) {
-      msg += `⚠️ ATENÇÃO\n`;
-      atencao.forEach(texto => msg += `• ${texto}\n`);
-      msg += `\n`;
-    }
-
-    // 3. STATUS GERAL
-    msg += `📊 Status: ${analysis.sc.total} SC pendentes | ${analysis.gestao.total} tarefas ativas`;
-
-    return msg.trim();
-  }
-
-  // 14h - ALERTA INTERMEDIÁRIO (ENXUTO)
-  buildAlertaIntermediario(analysis) {
-    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-    let msg = `⏰ ${hora} - CHECKPOINT\n\n`;
-    let hasContent = false;
-
-    // 1. Ainda pendente hoje (urgente)
-    const pendentesHoje = [];
-
-    if (analysis.sc.detalhes.urgentes?.length > 0) {
-      analysis.sc.detalhes.urgentes.slice(0, 2).forEach(sc => {
-        pendentesHoje.push(`SC ${sc.SC}: ${this.truncate(sc.Descricao, 35)} (${sc.Responsavel || '?'})`);
-      });
-    }
-
-    if (analysis.gestao.detalhes.venceHoje?.length > 0) {
-      analysis.gestao.detalhes.venceHoje.slice(0, 2).forEach(item => {
-        pendentesHoje.push(`${this.truncate(item.Acao, 35)} (${item.Responsavel || '?'})`);
-      });
-    }
-
-    if (pendentesHoje.length > 0) {
-      hasContent = true;
-      msg += `🔴 Ainda pendente hoje:\n`;
-      pendentesHoje.forEach(texto => msg += `• ${texto}\n`);
-      msg += `\n`;
-    }
-
-    // 2. SC mais antigas (>10 dias)
+    // SC mais antigas
     if (analysis.sc.detalhes.maisAntigas?.length > 0) {
       hasContent = true;
       msg += `⏳ SC mais antigas:\n`;
       analysis.sc.detalhes.maisAntigas.slice(0, 3).forEach(sc => {
-        msg += `• SC ${sc.SC}: ${this.truncate(sc.Descricao, 35)} - ${sc.DiasEmAberto} dias\n`;
+        msg += `• SC ${sc.SC} - ${sc.DiasEmAberto}d (${sc.Responsavel || '?'})\n`;
       });
       msg += `\n`;
     }
 
     if (hasContent) {
-      msg += `📊 ${analysis.sc.total} SC pendentes no total`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `📊 ${analysis.sc.total} SC pendentes`;
       return msg.trim();
     }
 
     return null; // Sem alertas
   }
 
-  // 18h - RESUMO DO DIA (ENXUTO)
+  // 18h - RESUMO DO DIA (AGRUPADO POR PESSOA)
   buildResumoFimDia(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
-    let msg = `📌 RESUMO DO DIA - ${hoje}\n\n`;
+    let msg = `📌 RESUMO - ${hoje}\n\n`;
 
-    // 1. CONCLUÍDO HOJE
+    // 1. CONCLUÍDO HOJE (agrupado por pessoa)
     if (analysis.gestao.concluidasHoje > 0) {
-      msg += `✅ CONCLUÍDO HOJE (${analysis.gestao.concluidasHoje})\n`;
+      const porPessoa = {};
 
-      analysis.gestao.detalhes.concluidasHoje.slice(0, 5).forEach(item => {
+      analysis.gestao.detalhes.concluidasHoje.forEach(item => {
+        const resp = item.Responsavel || 'Sem responsável';
+        if (!porPessoa[resp]) porPessoa[resp] = [];
+
         const situacao = (item.Situacao || '').toLowerCase();
-        const status = situacao.includes('atrasado') ? 'Atrasado' : 'No prazo';
-        msg += `• ${this.truncate(item.Acao, 45)} - ${status} (${item.Responsavel || '?'})\n`;
+        const status = situacao.includes('atrasado') ? '⚠️ Atrasado' : '✅ No prazo';
+
+        porPessoa[resp].push({
+          texto: this.truncate(item.Acao, 40),
+          status
+        });
       });
-      msg += `\n`;
+
+      msg += `✅ CONCLUÍDO HOJE (${analysis.gestao.concluidasHoje})\n\n`;
+
+      Object.entries(porPessoa).forEach(([nome, itens]) => {
+        msg += `👤 ${nome}\n`;
+        itens.forEach(item => {
+          msg += `  • ${item.texto} ${item.status}\n`;
+        });
+        msg += `\n`;
+      });
     } else {
       msg += `ℹ️ Nenhuma tarefa concluída hoje\n\n`;
     }
 
     // 2. SITUAÇÃO ATUAL
+    msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `📊 SITUAÇÃO ATUAL\n`;
     msg += `• ${analysis.sc.total} SC pendentes`;
     if (analysis.sc.urgentes > 0) msg += ` (${analysis.sc.urgentes} urgentes)`;
-    msg += `\n`;
-    msg += `• ${analysis.gestao.total} tarefas em andamento\n\n`;
+    msg += `\n• ${analysis.gestao.total} tarefas ativas\n\n`;
 
     // 3. PRIORIDADES PARA AMANHÃ
-    if (analysis.gestao.atrasadas > 0 || analysis.sc.urgentes > 0 || analysis.sc.aprovadoAtrasado > 0) {
+    const totalPrioridades = analysis.gestao.atrasadas + analysis.sc.urgentes + analysis.sc.aprovadoAtrasado;
+
+    if (totalPrioridades > 0) {
       msg += `🎯 AMANHÃ\n`;
 
       if (analysis.gestao.atrasadas > 0) {
-        msg += `• Resolver ${analysis.gestao.atrasadas} tarefa(s) atrasada(s)\n`;
+        msg += `• ${analysis.gestao.atrasadas} tarefa(s) atrasada(s)\n`;
       }
       if (analysis.sc.urgentes > 0) {
-        msg += `• Atender ${analysis.sc.urgentes} SC urgente(s)\n`;
+        msg += `• ${analysis.sc.urgentes} SC urgente(s)\n`;
       }
       if (analysis.sc.aprovadoAtrasado > 0) {
-        msg += `• Dar andamento em ${analysis.sc.aprovadoAtrasado} SC aprovada(s)\n`;
+        msg += `• ${analysis.sc.aprovadoAtrasado} SC aprovada(s) atrasada(s)\n`;
       }
-      msg += `\nBom descanso! 💪`;
+
+      msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `Bom descanso! 💪`;
     } else {
-      msg += `✅ Excelente trabalho hoje!\nContinue assim amanhã! 💪`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `✅ Excelente! Tudo em dia!\n`;
+      msg += `Continue assim amanhã! 💪`;
     }
 
     return msg.trim();
