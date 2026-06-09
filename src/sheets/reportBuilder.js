@@ -79,9 +79,10 @@ class ReportBuilder {
       msg += `🔴 CRÍTICO\n\n`;
 
       pessoas.forEach(([nome, itens]) => {
-        msg += `👤 ${nome.toUpperCase()} (${itens.length})\n`;
+        msg += `👤 ${nome.toUpperCase()} (${itens.length})\n\n`;
 
-        itens.slice(0, 5).forEach(item => {
+        // Mostra TODOS os itens (sem limite)
+        itens.forEach(item => {
           msg += `  • ${item.texto}\n`;
           if (item.obra) msg += `    📍 ${this.truncate(item.obra, 35)}\n`;
           msg += `    ${item.criticidade}`;
@@ -91,12 +92,10 @@ class ReportBuilder {
           if (item.obs && item.obs.toLowerCase().includes('aguardando')) {
             msg += `    💬 ${this.truncate(item.obs, 40)}\n`;
           }
+          msg += `\n`; // Linha em branco entre itens
         });
 
-        if (itens.length > 5) {
-          msg += `  ... e mais ${itens.length - 5}\n`;
-        }
-        msg += `\n`;
+        msg += `\n`; // Linha em branco entre pessoas
       });
     }
 
@@ -189,16 +188,18 @@ class ReportBuilder {
       msg += `🔴 Ainda pendente hoje:\n\n`;
 
       pessoas.forEach(([nome, itens]) => {
-        msg += `👤 ${nome} (${itens.length})\n`;
-        itens.slice(0, 3).forEach(item => {
+        msg += `👤 ${nome} (${itens.length})\n\n`;
+
+        // Mostra TODOS os itens (sem limite)
+        itens.forEach(item => {
           msg += `  • ${item.texto}\n`;
           if (item.obra) msg += `    📍 ${item.obra}\n`;
           if (item.prazo) msg += `    ⏰ Prazo: ${item.prazo}`;
           else if (item.dias) msg += `    ⏰ ${item.dias} dias em aberto`;
-          msg += `\n`;
+          msg += `\n\n`; // Linha em branco entre itens
         });
-        if (itens.length > 3) msg += `  ... e mais ${itens.length - 3}\n`;
-        msg += `\n`;
+
+        msg += `\n`; // Linha em branco entre pessoas
       });
     }
 
