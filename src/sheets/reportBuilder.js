@@ -1,5 +1,5 @@
 class ReportBuilder {
-  // 08h30 - PÓS-REUNIÃO (AGRUPADO POR PESSOA)
+  // 08h30 - PÓS-REUNIÃO (RICO EM INFORMAÇÃO)
   buildPosReuniao(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
@@ -15,9 +15,11 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'SC',
-          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 45)}`,
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`,
+          obra: sc.Obra,
           criticidade: '🔴 URGENTE',
-          dias: sc.DiasEmAberto
+          dias: sc.DiasEmAberto,
+          prazo: sc.DataNecessidade
         });
       });
     }
@@ -29,9 +31,11 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'SC',
-          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 45)}`,
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`,
+          obra: sc.Obra,
           criticidade: '⚠️ Aprovada atrasada',
-          dias: sc.DiasEmAberto
+          dias: sc.DiasEmAberto,
+          prazo: sc.DataNecessidade
         });
       });
     }
@@ -43,7 +47,8 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'TAREFA',
-          texto: this.truncate(item.Acao, 45),
+          texto: this.truncate(item.Acao, 40),
+          obra: item.Obra,
           criticidade: `🔴 ATRASADO`,
           prazo: item.Prazo,
           obs: item.Observacoes
@@ -58,37 +63,62 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'TAREFA',
-          texto: this.truncate(item.Acao, 45),
+          texto: this.truncate(item.Acao, 40),
+          obra: item.Obra,
           criticidade: '⏰ VENCE HOJE',
           prazo: item.Prazo
         });
       });
     }
 
-    // Ordena por quantidade (quem tem mais pendências aparece primeiro)
+    // Ordena por quantidade
     const pessoas = Object.entries(porPessoa)
       .sort((a, b) => b[1].length - a[1].length);
 
     if (pessoas.length > 0) {
       msg += `🔴 CRÍTICO\n\n`;
 
-      // Mostra cada pessoa
       pessoas.forEach(([nome, itens]) => {
         msg += `👤 ${nome.toUpperCase()} (${itens.length})\n`;
 
-        // Mostra até 5 itens por pessoa
         itens.slice(0, 5).forEach(item => {
           msg += `  • ${item.texto}\n`;
+          if (item.obra) msg += `    📍 ${this.truncate(item.obra, 35)}\n`;
           msg += `    ${item.criticidade}`;
           if (item.prazo) msg += ` - Prazo: ${item.prazo}`;
-          if (item.dias) msg += ` - ${item.dias}d`;
+          if (item.dias) msg += ` (${item.dias}d)`;
           msg += `\n`;
+          if (item.obs && item.obs.toLowerCase().includes('aguardando')) {
+            msg += `    💬 ${this.truncate(item.obs, 40)}\n`;
+          }
         });
 
         if (itens.length > 5) {
           msg += `  ... e mais ${itens.length - 5}\n`;
         }
+        msg += `\n`;
+      });
+    }
 
+    // COBRANÇA: Itens sem prazo
+    const semPrazo = this.getSemPrazo(analysis);
+    if (semPrazo.length > 0) {
+      msg += `🚨 SEM PRAZO DEFINIDO (${semPrazo.length})\n`;
+      msg += `⚠️ CADASTRAR PRAZO URGENTE:\n\n`;
+
+      const porPessoaSemPrazo = {};
+      semPrazo.forEach(item => {
+        const resp = item.responsavel || 'Sem responsável';
+        if (!porPessoaSemPrazo[resp]) porPessoaSemPrazo[resp] = [];
+        porPessoaSemPrazo[resp].push(item.texto);
+      });
+
+      Object.entries(porPessoaSemPrazo).forEach(([nome, itens]) => {
+        msg += `👤 ${nome}\n`;
+        itens.slice(0, 3).forEach(texto => {
+          msg += `  • ${texto}\n`;
+        });
+        if (itens.length > 3) msg += `  ... e mais ${itens.length - 3}\n`;
         msg += `\n`;
       });
     }
@@ -114,14 +144,14 @@ class ReportBuilder {
     return msg.trim();
   }
 
-  // 14h - CHECKPOINT (AGRUPADO POR PESSOA)
+  // 14h - CHECKPOINT (MAIS RICO)
   buildAlertaIntermediario(analysis) {
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     let msg = `⏰ CHECKPOINT ${hora}\n\n`;
     let hasContent = false;
 
-    // Agrupa pendências de hoje por pessoa
+    // Agrupa pendências
     const porPessoa = {};
 
     // SC Urgentes
@@ -129,7 +159,12 @@ class ReportBuilder {
       analysis.sc.detalhes.urgentes.forEach(sc => {
         const resp = sc.Responsavel || 'Sem responsável';
         if (!porPessoa[resp]) porPessoa[resp] = [];
-        porPessoa[resp].push(`SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`);
+        porPessoa[resp].push({
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 35)}`,
+          obra: this.truncate(sc.Obra, 30),
+          dias: sc.DiasEmAberto,
+          prazo: sc.DataNecessidade
+        });
       });
     }
 
@@ -138,32 +173,62 @@ class ReportBuilder {
       analysis.gestao.detalhes.venceHoje.forEach(item => {
         const resp = item.Responsavel || 'Sem responsável';
         if (!porPessoa[resp]) porPessoa[resp] = [];
-        porPessoa[resp].push(this.truncate(item.Acao, 40));
+        porPessoa[resp].push({
+          texto: this.truncate(item.Acao, 35),
+          obra: this.truncate(item.Obra, 30),
+          prazo: item.Prazo
+        });
       });
     }
 
-    const pessoas = Object.entries(porPessoa);
+    const pessoas = Object.entries(porPessoa)
+      .sort((a, b) => b[1].length - a[1].length);
 
     if (pessoas.length > 0) {
       hasContent = true;
       msg += `🔴 Ainda pendente hoje:\n\n`;
 
       pessoas.forEach(([nome, itens]) => {
-        msg += `👤 ${nome}\n`;
-        itens.slice(0, 3).forEach(texto => {
-          msg += `  • ${texto}\n`;
+        msg += `👤 ${nome} (${itens.length})\n`;
+        itens.slice(0, 3).forEach(item => {
+          msg += `  • ${item.texto}\n`;
+          if (item.obra) msg += `    📍 ${item.obra}\n`;
+          if (item.prazo) msg += `    ⏰ Prazo: ${item.prazo}`;
+          else if (item.dias) msg += `    ⏰ ${item.dias} dias em aberto`;
+          msg += `\n`;
         });
         if (itens.length > 3) msg += `  ... e mais ${itens.length - 3}\n`;
         msg += `\n`;
       });
     }
 
+    // COBRANÇA: Sem prazo
+    const semPrazo = this.getSemPrazo(analysis);
+    if (semPrazo.length > 0) {
+      hasContent = true;
+      msg += `🚨 SEM PRAZO (${semPrazo.length})\n`;
+      msg += `Cadastrar prazo urgente:\n\n`;
+
+      const porPessoaSemPrazo = {};
+      semPrazo.forEach(item => {
+        const resp = item.responsavel || 'Sem responsável';
+        if (!porPessoaSemPrazo[resp]) porPessoaSemPrazo[resp] = [];
+        porPessoaSemPrazo[resp].push(item.texto);
+      });
+
+      Object.entries(porPessoaSemPrazo).slice(0, 5).forEach(([nome, itens]) => {
+        msg += `👤 ${nome}: ${itens.length} item(ns)\n`;
+      });
+      msg += `\n`;
+    }
+
     // SC mais antigas
     if (analysis.sc.detalhes.maisAntigas?.length > 0) {
       hasContent = true;
-      msg += `⏳ SC mais antigas:\n`;
+      msg += `⏳ SC MAIS ANTIGAS:\n`;
       analysis.sc.detalhes.maisAntigas.slice(0, 3).forEach(sc => {
         msg += `• SC ${sc.SC} - ${sc.DiasEmAberto}d (${sc.Responsavel || '?'})\n`;
+        msg += `  ${this.truncate(sc.Descricao, 40)}\n`;
       });
       msg += `\n`;
     }
@@ -174,16 +239,16 @@ class ReportBuilder {
       return msg.trim();
     }
 
-    return null; // Sem alertas
+    return null;
   }
 
-  // 18h - RESUMO DO DIA (AGRUPADO POR PESSOA)
+  // 18h - RESUMO DO DIA (RICO)
   buildResumoFimDia(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
     let msg = `📌 RESUMO - ${hoje}\n\n`;
 
-    // 1. CONCLUÍDO HOJE (agrupado por pessoa)
+    // 1. CONCLUÍDO HOJE
     if (analysis.gestao.concluidasHoje > 0) {
       const porPessoa = {};
 
@@ -195,7 +260,8 @@ class ReportBuilder {
         const status = situacao.includes('atrasado') ? '⚠️ Atrasado' : '✅ No prazo';
 
         porPessoa[resp].push({
-          texto: this.truncate(item.Acao, 40),
+          texto: this.truncate(item.Acao, 35),
+          obra: this.truncate(item.Obra, 30),
           status
         });
       });
@@ -206,11 +272,31 @@ class ReportBuilder {
         msg += `👤 ${nome}\n`;
         itens.forEach(item => {
           msg += `  • ${item.texto} ${item.status}\n`;
+          if (item.obra) msg += `    📍 ${item.obra}\n`;
         });
         msg += `\n`;
       });
     } else {
       msg += `ℹ️ Nenhuma tarefa concluída hoje\n\n`;
+    }
+
+    // COBRANÇA: Sem prazo
+    const semPrazo = this.getSemPrazo(analysis);
+    if (semPrazo.length > 0) {
+      msg += `🚨 SEM PRAZO (${semPrazo.length})\n`;
+      msg += `Cadastrar AMANHÃ:\n\n`;
+
+      const porPessoaSemPrazo = {};
+      semPrazo.forEach(item => {
+        const resp = item.responsavel || 'Sem responsável';
+        if (!porPessoaSemPrazo[resp]) porPessoaSemPrazo[resp] = [];
+        porPessoaSemPrazo[resp].push(item.texto);
+      });
+
+      Object.entries(porPessoaSemPrazo).slice(0, 5).forEach(([nome, itens]) => {
+        msg += `👤 ${nome}: ${itens.length}\n`;
+      });
+      msg += `\n`;
     }
 
     // 2. SITUAÇÃO ATUAL
@@ -220,31 +306,53 @@ class ReportBuilder {
     if (analysis.sc.urgentes > 0) msg += ` (${analysis.sc.urgentes} urgentes)`;
     msg += `\n• ${analysis.gestao.total} tarefas ativas\n\n`;
 
-    // 3. PRIORIDADES PARA AMANHÃ
+    // 3. PRIORIDADES AMANHÃ
     const totalPrioridades = analysis.gestao.atrasadas + analysis.sc.urgentes + analysis.sc.aprovadoAtrasado;
 
     if (totalPrioridades > 0) {
       msg += `🎯 AMANHÃ\n`;
-
-      if (analysis.gestao.atrasadas > 0) {
-        msg += `• ${analysis.gestao.atrasadas} tarefa(s) atrasada(s)\n`;
-      }
-      if (analysis.sc.urgentes > 0) {
-        msg += `• ${analysis.sc.urgentes} SC urgente(s)\n`;
-      }
-      if (analysis.sc.aprovadoAtrasado > 0) {
-        msg += `• ${analysis.sc.aprovadoAtrasado} SC aprovada(s) atrasada(s)\n`;
-      }
-
+      if (analysis.gestao.atrasadas > 0) msg += `• ${analysis.gestao.atrasadas} tarefa(s) atrasada(s)\n`;
+      if (analysis.sc.urgentes > 0) msg += `• ${analysis.sc.urgentes} SC urgente(s)\n`;
+      if (analysis.sc.aprovadoAtrasado > 0) msg += `• ${analysis.sc.aprovadoAtrasado} SC aprovada(s) atrasada(s)\n`;
       msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
       msg += `Bom descanso! 💪`;
     } else {
       msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
-      msg += `✅ Excelente! Tudo em dia!\n`;
-      msg += `Continue assim amanhã! 💪`;
+      msg += `✅ Excelente! Tudo em dia!\nContinue assim amanhã! 💪`;
     }
 
     return msg.trim();
+  }
+
+  // HELPER: Identifica itens sem prazo
+  getSemPrazo(analysis) {
+    const semPrazo = [];
+
+    // Tarefas da GESTÃO sem prazo
+    if (analysis.gestao.detalhes?.atrasadas) {
+      analysis.gestao.detalhes.atrasadas.forEach(item => {
+        if (!item.Prazo || item.Prazo.trim() === '') {
+          semPrazo.push({
+            responsavel: item.Responsavel,
+            texto: this.truncate(item.Acao, 40)
+          });
+        }
+      });
+    }
+
+    // SC sem data de necessidade
+    if (analysis.sc.detalhes?.urgentes) {
+      analysis.sc.detalhes.urgentes.forEach(sc => {
+        if (!sc.DataNecessidade || sc.DataNecessidade.trim() === '') {
+          semPrazo.push({
+            responsavel: sc.Responsavel,
+            texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 30)}`
+          });
+        }
+      });
+    }
+
+    return semPrazo;
   }
 
   // Helper: truncar texto
