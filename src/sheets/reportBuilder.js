@@ -1,4 +1,5 @@
 class ReportBuilder {
+  // 08h30 - PÓS-REUNIÃO
   buildPosReuniao(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
@@ -7,217 +8,225 @@ class ReportBuilder {
     msg += `📅 ${hoje}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    // 1. SC PENDENTES
-    const scPendentes = analysis.sc?.detalhes?.todas?.slice(0, 10) || [];
-    if (scPendentes.length > 0) {
-      msg += `📋 SC PENDENTES (${analysis.sc.total})\n\n`;
+    let hasContent = false;
 
-      scPendentes.forEach((sc, index) => {
-        const numero = sc.SC || 'S/N';
-        const desc = sc.Descricao || 'Sem descrição';
-        const resp = sc.Responsavel || 'Não definido';
-        const dias = sc.DiasEmAberto || '?';
-        const obra = sc.Obra || 'Obra não informada';
-        const projeto = sc.Projeto ? ` - ${sc.Projeto}` : '';
-
-        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} | ⏰ ${dias} dias\n\n`;
-      });
-
-      if (analysis.sc.total > 10) {
-        msg += `   ... e mais ${analysis.sc.total - 10} SC pendentes\n\n`;
-      }
-    }
-
-    // 2. TAREFAS ATRASADAS (top 10, com contexto completo)
+    // 1. GESTÃO COMPARTILHADA - TAREFAS ATRASADAS
     if (analysis.gestao.atrasadas > 0) {
-      msg += `⚠️ TAREFAS ATRASADAS (${analysis.gestao.atrasadas})\n\n`;
+      hasContent = true;
+      msg += `🔴 TAREFAS ATRASADAS (${analysis.gestao.atrasadas})\n\n`;
 
-      analysis.gestao.detalhes.atrasadas.slice(0, 10).forEach((item, index) => {
+      analysis.gestao.detalhes.atrasadas.forEach((item, index) => {
         const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
         const prazo = item.Prazo || 'Sem prazo';
-        const obra = item.Obra || 'Obra não informada';
-        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
-        const setor = item.Setor || 'Setor não informado';
-        const obs = item.Observacoes ? `\n   💬 ${item.Observacoes}` : '';
+        const obra = item.Obra || '';
+        const projeto = item.Projeto || '';
+        const obs = item.Observacoes || '';
 
         msg += `${index + 1}. ${acao}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} (${setor}) | 📅 ${prazo}${obs}\n\n`;
+        msg += `   📍 Obra: ${obra}\n`;
+        if (projeto) msg += `   🏗️ Projeto: ${projeto}\n`;
+        msg += `   👤 ${resp} | ⏰ Prazo: ${prazo}\n`;
+        if (obs) msg += `   💬 ${obs}\n`;
+        msg += `\n`;
       });
-
-      if (analysis.gestao.atrasadas > 10) {
-        msg += `   ... e mais ${analysis.gestao.atrasadas - 10} tarefas\n\n`;
-      }
     }
 
-    // 3. AGUARDANDO APROVAÇÃO (top 10, com contexto)
+    // 2. GESTÃO COMPARTILHADA - VENCE HOJE
+    if (analysis.gestao.venceHoje > 0) {
+      hasContent = true;
+      msg += `⚠️ TAREFAS QUE VENCEM HOJE (${analysis.gestao.venceHoje})\n\n`;
+
+      analysis.gestao.detalhes.venceHoje.forEach((item, index) => {
+        const acao = item.Acao || 'Sem descrição';
+        const resp = item.Responsavel || 'Não definido';
+        const obra = item.Obra || '';
+        const projeto = item.Projeto || '';
+        const setor = item.Setor || '';
+
+        msg += `${index + 1}. ${acao}\n`;
+        msg += `   📍 Obra: ${obra}\n`;
+        if (projeto) msg += `   🏗️ Projeto: ${projeto}\n`;
+        msg += `   👤 ${resp}`;
+        if (setor) msg += ` (${setor})`;
+        msg += `\n\n`;
+      });
+    }
+
+    // 3. GESTÃO COMPARTILHADA - AGUARDANDO APROVAÇÃO
     if (analysis.gestao.aguardandoAprovacao > 0) {
-      msg += `⏳ AGUARDANDO APROVAÇÃO/RETORNO (${analysis.gestao.aguardandoAprovacao})\n\n`;
+      hasContent = true;
+      msg += `⏳ AGUARDANDO APROVAÇÃO/LIBERAÇÃO (${analysis.gestao.aguardandoAprovacao})\n\n`;
 
-      analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 10).forEach((item, index) => {
+      analysis.gestao.detalhes.aguardandoAprovacao.slice(0, 5).forEach((item, index) => {
         const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
-        const obra = item.Obra || 'Obra não informada';
-        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
-        const obs = item.Observacoes || 'Sem observação';
+        const obra = item.Obra || '';
+        const obs = item.Observacoes || '';
 
         msg += `${index + 1}. ${acao}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
+        msg += `   📍 Obra: ${obra}\n`;
         msg += `   👤 ${resp}\n`;
-        msg += `   💬 ${obs}\n\n`;
+        if (obs) msg += `   💬 ${obs}\n`;
+        msg += `\n`;
       });
 
-      if (analysis.gestao.aguardandoAprovacao > 10) {
-        msg += `   ... e mais ${analysis.gestao.aguardandoAprovacao - 10}\n\n`;
+      if (analysis.gestao.aguardandoAprovacao > 5) {
+        msg += `   ... e mais ${analysis.gestao.aguardandoAprovacao - 5}\n\n`;
       }
     }
 
-    // 4. CRÍTICO: TAREFAS SEM PRAZO (top 10, com contexto completo)
-    if (analysis.gestao.semPrazo > 0) {
-      msg += `🚨 URGENTE: PRAZOS NÃO CADASTRADOS (${analysis.gestao.semPrazo})\n\n`;
-      msg += `⚠️ Tarefas ativas SEM prazo definido. Cadastrar urgentemente:\n\n`;
+    // 4. SC - URGENTES
+    if (analysis.sc.urgentes > 0) {
+      hasContent = true;
+      msg += `🔴 SC URGENTES (${analysis.sc.urgentes})\n\n`;
 
-      analysis.gestao.detalhes.semPrazo.slice(0, 10).forEach((item, index) => {
-        const acao = item.Acao || 'Sem descrição';
-        const resp = item.Responsavel || 'Não definido';
-        const obra = item.Obra || 'Obra não informada';
-        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
-        const setor = item.Setor || 'Setor não informado';
+      analysis.sc.detalhes.urgentes.forEach((sc, index) => {
+        const numero = sc.SC || 'S/N';
+        const desc = sc.Descricao || 'Sem descrição';
+        const obra = sc.Obra || '';
+        const projeto = sc.Projeto || '';
+        const resp = sc.Responsavel || 'Não definido';
+        const dias = sc.DiasEmAberto || '?';
 
-        msg += `${index + 1}. ${acao}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} (${setor})\n\n`;
+        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
+        msg += `   📍 Obra: ${obra}\n`;
+        if (projeto) msg += `   🏗️ Projeto: ${projeto}\n`;
+        msg += `   👤 ${resp} | ⏰ ${dias} dias em aberto\n\n`;
+      });
+    }
+
+    // 5. SC - APROVADAS ATRASADAS
+    if (analysis.sc.aprovadoAtrasado > 0) {
+      hasContent = true;
+      msg += `⚠️ SC APROVADAS MAS ATRASADAS (${analysis.sc.aprovadoAtrasado})\n\n`;
+
+      analysis.sc.detalhes.aprovadoAtrasado.slice(0, 5).forEach((sc, index) => {
+        const numero = sc.SC || 'S/N';
+        const desc = sc.Descricao || 'Sem descrição';
+        const obra = sc.Obra || '';
+        const resp = sc.Responsavel || 'Não definido';
+        const obs = sc.Observacao || '';
+
+        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
+        msg += `   📍 ${obra}\n`;
+        msg += `   👤 ${resp}\n`;
+        if (obs) msg += `   💬 ${obs}\n`;
+        msg += `\n`;
       });
 
-      if (analysis.gestao.semPrazo > 10) {
-        msg += `   ... e mais ${analysis.gestao.semPrazo - 10} tarefas\n\n`;
+      if (analysis.sc.aprovadoAtrasado > 5) {
+        msg += `   ... e mais ${analysis.sc.aprovadoAtrasado - 5}\n\n`;
       }
     }
 
-    // 5. RESUMO NUMÉRICO
-    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `📊 RESUMO GERAL\n`;
-    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `• SC pendentes: ${analysis.sc.total}\n`;
-    msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
-    msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
-    msg += `• Aguardando aprovação: ${analysis.gestao.aguardandoAprovacao}\n`;
-    msg += `• ⚠️ Sem prazo: ${analysis.gestao.semPrazo}\n`;
-    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    // 6. SC - APROVADAS SEM PC
+    if (analysis.sc.aprovadasSemPC > 0) {
+      hasContent = true;
+      msg += `📋 SC APROVADAS SEM PEDIDO DE COMPRA (${analysis.sc.aprovadasSemPC})\n\n`;
+
+      analysis.sc.detalhes.aprovadasSemPC.slice(0, 5).forEach((sc, index) => {
+        const numero = sc.SC || 'S/N';
+        const desc = sc.Descricao || 'Sem descrição';
+        const obra = sc.Obra || '';
+        const resp = sc.Responsavel || 'Não definido';
+
+        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
+        msg += `   📍 ${obra}\n`;
+        msg += `   👤 ${resp}\n\n`;
+      });
+
+      if (analysis.sc.aprovadasSemPC > 5) {
+        msg += `   ... e mais ${analysis.sc.aprovadasSemPC - 5}\n\n`;
+      }
+    }
+
+    // 7. RESUMO NUMÉRICO
+    if (hasContent) {
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `📊 RESUMO\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `• SC pendentes: ${analysis.sc.total}\n`;
+      msg += `  - Urgentes: ${analysis.sc.urgentes}\n`;
+      msg += `  - Aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
+      msg += `  - Sem PC: ${analysis.sc.aprovadasSemPC}\n\n`;
+      msg += `• Tarefas GESTÃO:\n`;
+      msg += `  - Atrasadas: ${analysis.gestao.atrasadas}\n`;
+      msg += `  - Vencem hoje: ${analysis.gestao.venceHoje}\n`;
+      msg += `  - Aguardando aprovação: ${analysis.gestao.aguardandoAprovacao}\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    } else {
+      msg += `✅ Nenhuma pendência crítica no momento!\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    }
 
     return msg.trim();
   }
 
-  buildAlertaUrgente(analysis) {
+  // 14h - ALERTA INTERMEDIÁRIO
+  buildAlertaIntermediario(analysis) {
     const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     let msg = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `⏰ ALERTA INTERMEDIÁRIO - ${hora}\n`;
+    msg += `⏰ ALERTA 14H - ${hora}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
     let hasContent = false;
 
-    // SC PENDENTES (top 10)
-    const pendentes = analysis.sc?.detalhes?.todas?.slice(0, 10) || [];
-    if (pendentes.length > 0) {
+    // 1. SC MAIS ANTIGAS (>10 dias)
+    if (analysis.sc.maisAntigas > 0) {
       hasContent = true;
-      const total = analysis.sc?.total || pendentes.length;
-      msg += `📋 SC PENDENTES (${total})\n\n`;
+      msg += `📦 SC MAIS ANTIGAS (>10 dias)\n\n`;
 
-      pendentes.forEach((sc, index) => {
+      analysis.sc.detalhes.maisAntigas.forEach((sc, index) => {
         const numero = sc.SC || 'S/N';
         const desc = sc.Descricao || 'Sem descrição';
+        const dias = sc.DiasEmAberto || '?';
+        const obra = sc.Obra || '';
         const resp = sc.Responsavel || 'Não definido';
-        const dias = sc.DiasEmAberto || '?';
-        const obra = sc.Obra || 'Obra não informada';
-        const projeto = sc.Projeto ? ` - ${sc.Projeto}` : '';
-
-        msg += `${index + 1}. SC ${numero} - ${desc}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} | ⏰ ${dias}d\n\n`;
-      });
-
-      if (total > 10) {
-        msg += `   ... e mais ${total - 10} SC pendentes\n\n`;
-      }
-    }
-
-    // SC MAIS ANTIGAS (>7 dias, com contexto)
-    const antigas = analysis.sc?.detalhes?.maisAntigas?.slice(0, 3) || [];
-    if (antigas.length > 0 && antigas[0]?.DiasEmAberto > 7) {
-      hasContent = true;
-      msg += `⏳ SC MAIS ANTIGAS\n\n`;
-
-      antigas.forEach((sc, index) => {
-        const numero = sc.SC || 'S/N';
-        const desc = sc.Descricao || 'Sem descrição';
-        const dias = sc.DiasEmAberto || '?';
-        const obra = sc.Obra || 'Obra não informada';
-        const projeto = sc.Projeto ? ` - ${sc.Projeto}` : '';
 
         msg += `${index + 1}. SC ${numero} - ${dias} dias\n`;
         msg += `   📝 ${desc}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n\n`;
+        msg += `   📍 ${obra}\n`;
+        msg += `   👤 ${resp}\n\n`;
       });
     }
 
-    // TAREFAS COM PRAZO HOJE/AMANHÃ (top 10, com contexto)
-    const prazoHoje = analysis.gestao?.detalhes?.prazoProximo || [];
-    if (prazoHoje.length > 0) {
+    // 2. TAREFAS QUE VENCERAM ONTEM/HOJE
+    if (analysis.gestao.atrasadas > 0 || analysis.gestao.venceHoje > 0) {
       hasContent = true;
-      msg += `📅 PRAZOS HOJE/AMANHÃ (${prazoHoje.length})\n\n`;
+      msg += `⚠️ PRAZOS CRÍTICOS\n\n`;
 
-      prazoHoje.slice(0, 10).forEach((item, index) => {
-        const acao = item.Acao || 'Sem descrição';
-        const resp = item.Responsavel || 'Não definido';
-        const prazo = item.Prazo || '?';
-        const obra = item.Obra || 'Obra não informada';
-        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
+      if (analysis.gestao.atrasadas > 0) {
+        msg += `🔴 Atrasadas: ${analysis.gestao.atrasadas}\n`;
+        analysis.gestao.detalhes.atrasadas.slice(0, 3).forEach(item => {
+          msg += `   • ${item.Acao || 'Sem descrição'} (${item.Responsavel || '?'})\n`;
+        });
+        msg += `\n`;
+      }
 
-        msg += `${index + 1}. ${acao}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} | 📅 ${prazo}\n\n`;
-      });
-
-      if (prazoHoje.length > 10) {
-        msg += `   ... e mais ${prazoHoje.length - 10} tarefas\n\n`;
+      if (analysis.gestao.venceHoje > 0) {
+        msg += `⏰ Vencem hoje: ${analysis.gestao.venceHoje}\n`;
+        analysis.gestao.detalhes.venceHoje.slice(0, 3).forEach(item => {
+          msg += `   • ${item.Acao || 'Sem descrição'} (${item.Responsavel || '?'})\n`;
+        });
+        msg += `\n`;
       }
     }
 
-    // COBRANÇA: TAREFAS SEM PRAZO (top 10, com contexto completo)
-    if (analysis.gestao.semPrazo > 0) {
-      hasContent = true;
-      msg += `🚨 SEM PRAZO CADASTRADO (${analysis.gestao.semPrazo})\n\n`;
-      msg += `⚠️ Cadastrar prazos URGENTEMENTE:\n\n`;
-
-      analysis.gestao.detalhes.semPrazo.slice(0, 10).forEach((item, index) => {
-        const acao = item.Acao || 'Sem descrição';
-        const resp = item.Responsavel || 'Não definido';
-        const obra = item.Obra || 'Obra não informada';
-        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
-        const setor = item.Setor || 'Setor não informado';
-
-        msg += `${index + 1}. ${acao}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} (${setor})\n\n`;
-      });
-
-      if (analysis.gestao.semPrazo > 10) {
-        msg += `   ... e mais ${analysis.gestao.semPrazo - 10} tarefas\n\n`;
-      }
+    // 3. STATUS GERAL
+    if (hasContent) {
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `📊 Status: ${analysis.sc.total} SC pendentes | ${analysis.gestao.atrasadas} tarefas atrasadas\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    } else {
+      return null; // Sem alertas
     }
 
-    if (!hasContent) {
-      return null;
-    }
-
-    msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
     return msg.trim();
   }
 
+  // 18h - RESUMO DO DIA
   buildResumoFimDia(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');
 
@@ -226,115 +235,64 @@ class ReportBuilder {
     msg += `📅 ${hoje}\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-    // 1. ATIVIDADES CONCLUÍDAS HOJE (todas, com contexto completo)
+    // 1. CONCLUÍDAS HOJE
     if (analysis.gestao.concluidasHoje > 0) {
       msg += `✅ CONCLUÍDAS HOJE (${analysis.gestao.concluidasHoje})\n\n`;
 
       analysis.gestao.detalhes.concluidasHoje.forEach((item, index) => {
         const acao = item.Acao || 'Sem descrição';
         const resp = item.Responsavel || 'Não definido';
-        const obra = item.Obra || 'Obra não informada';
-        const projeto = item.Projeto ? ` - ${item.Projeto}` : '';
-        const setor = item.Setor || 'Setor não informado';
-        const obs = item.Observacoes ? `\n   💬 ${item.Observacoes}` : '';
+        const obra = item.Obra || '';
+        const situacao = item.Situacao || '';
 
         msg += `${index + 1}. ${acao}\n`;
-        msg += `   🏗️ ${obra}${projeto}\n`;
-        msg += `   👤 ${resp} (${setor})${obs}\n\n`;
+        msg += `   📍 ${obra}\n`;
+        msg += `   👤 ${resp}`;
+        if (situacao.toLowerCase().includes('atrasado')) {
+          msg += ` ⚠️ (Concluído com atraso)`;
+        } else {
+          msg += ` ✅ (No prazo)`;
+        }
+        msg += `\n\n`;
       });
     } else {
-      msg += `ℹ️ Nenhuma atividade concluída hoje\n\n`;
+      msg += `ℹ️ Nenhuma tarefa concluída hoje\n\n`;
     }
 
-    // 2. VISÃO GERAL DO DIA
+    // 2. SITUAÇÃO ATUAL
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `📊 SITUAÇÃO ATUAL\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `• SC pendentes: ${analysis.sc.total}\n`;
-    msg += `• SC aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n`;
-    msg += `• Tarefas atrasadas: ${analysis.gestao.atrasadas}\n`;
-    msg += `• Tarefas em andamento: ${analysis.gestao.emAndamento}\n`;
+    msg += `SC:\n`;
+    msg += `• Total pendente: ${analysis.sc.total}\n`;
+    msg += `• Urgentes: ${analysis.sc.urgentes}\n`;
+    msg += `• Aprovadas atrasadas: ${analysis.sc.aprovadoAtrasado}\n\n`;
+    msg += `GESTÃO COMPARTILHADA:\n`;
+    msg += `• Atrasadas: ${analysis.gestao.atrasadas}\n`;
     msg += `• Aguardando aprovação: ${analysis.gestao.aguardandoAprovacao}\n`;
-
-    if (analysis.gestao.semPrazo > 0) {
-      msg += `• ⚠️ Sem prazo: ${analysis.gestao.semPrazo}\n`;
-    }
-    msg += '\n';
+    msg += `\n`;
 
     // 3. PRIORIDADES PARA AMANHÃ
-    if (analysis.sc.total > 0 || analysis.gestao.atrasadas > 0 || analysis.gestao.semPrazo > 0) {
+    if (analysis.gestao.atrasadas > 0 || analysis.sc.urgentes > 0) {
       msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
       msg += `🎯 PRIORIDADES PARA AMANHÃ\n`;
       msg += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
 
-      if (analysis.sc.total > 0) {
-        msg += `• SC pendentes: ${analysis.sc.total}\n`;
-      }
-
       if (analysis.gestao.atrasadas > 0) {
-        const setoresTop = Object.entries(analysis.gestao.porSetor)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 3);
-
-        if (setoresTop.length > 0) {
-          msg += `• Setores com mais pendências:\n`;
-          setoresTop.forEach(([setor, qtd]) => {
-            msg += `  - ${setor}: ${qtd}\n`;
-          });
-        }
+        msg += `• Resolver ${analysis.gestao.atrasadas} tarefa(s) atrasada(s)\n`;
       }
-
-      if (analysis.gestao.semPrazo > 0) {
-        msg += `\n🚨 URGENTE: CADASTRAR PRAZOS (${analysis.gestao.semPrazo})\n`;
-
-        const responsaveisSemPrazo = {};
-        analysis.gestao.detalhes.semPrazo.forEach(item => {
-          const resp = item.Responsavel || 'Não definido';
-          responsaveisSemPrazo[resp] = (responsaveisSemPrazo[resp] || 0) + 1;
-        });
-
-        const topResponsaveis = Object.entries(responsaveisSemPrazo)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 8);
-
-        topResponsaveis.forEach(([resp, qtd]) => {
-          msg += `  • ${resp}: ${qtd} tarefa${qtd > 1 ? 's' : ''}\n`;
-        });
+      if (analysis.sc.urgentes > 0) {
+        msg += `• Atender ${analysis.sc.urgentes} SC urgente(s)\n`;
+      }
+      if (analysis.sc.aprovadoAtrasado > 0) {
+        msg += `• Dar andamento em ${analysis.sc.aprovadoAtrasado} SC aprovada(s)\n`;
       }
     } else {
-      msg += `✅ Excelente trabalho hoje!\n`;
-      msg += `Continue assim amanhã! 💪`;
+      msg += `✅ Excelente trabalho hoje! 💪`;
     }
 
     msg += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
     return msg.trim();
-  }
-
-  // Método para preview/aprovação
-  buildPreview(analysis) {
-    const preview = {
-      timestamp: new Date().toLocaleString('pt-BR'),
-      criticas: {
-        scUrgentes: analysis.sc.urgentes,
-        scAtrasadas: analysis.sc.aprovadoAtrasado,
-        tarefasAtrasadas: analysis.gestao.atrasadas,
-        aguardandoAprovacao: analysis.gestao.aguardandoAprovacao,
-        semPrazo: analysis.gestao.semPrazo,
-        concluidasHoje: analysis.gestao.concluidasHoje
-      },
-      mensagens: {
-        posReuniao: this.buildPosReuniao(analysis),
-        alerta: this.buildAlertaUrgente(analysis),
-        resumoDia: this.buildResumoFimDia(analysis)
-      }
-    };
-
-    return preview;
-  }
-
-  truncate(str, maxLen) {
-    if (!str) return '';
-    return str.length > maxLen ? str.substring(0, maxLen) + '...' : str;
   }
 }
 

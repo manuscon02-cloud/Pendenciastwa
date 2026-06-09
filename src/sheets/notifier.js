@@ -11,18 +11,21 @@ class AtaNotifier {
   init(getGroupId) {
     this.getGroupId = getGroupId;
 
+    // 08h30 - Pós-reunião
     this.jobs.push(
       cron.schedule('30 8 * * 1-5', () => this.sendPosReuniao(), {
         timezone: 'America/Sao_Paulo'
       })
     );
 
+    // 14h - Alerta intermediário
     this.jobs.push(
-      cron.schedule('0 10,16 * * 1-5', () => this.sendAlertaUrgente(), {
+      cron.schedule('0 14 * * 1-5', () => this.sendAlertaIntermediario(), {
         timezone: 'America/Sao_Paulo'
       })
     );
 
+    // 18h - Resumo do dia
     this.jobs.push(
       cron.schedule('0 18 * * 1-5', () => this.sendResumoFimDia(), {
         timezone: 'America/Sao_Paulo'
@@ -30,9 +33,9 @@ class AtaNotifier {
     );
 
     console.log('✅ Notificador de ata inicializado');
-    console.log('   📅 Pós-reunião: Seg-Sex 08h30');
-    console.log('   ⚠️  Alertas pendentes: Seg-Sex 10h e 16h');
-    console.log('   📊 Resumo fim do dia: Seg-Sex 18h');
+    console.log('   📅 08h30: Relatório pós-reunião (Segunda a Sexta)');
+    console.log('   ⚠️  14h00: Alerta intermediário (Segunda a Sexta)');
+    console.log('   📊 18h00: Resumo do dia (Segunda a Sexta)');
   }
 
   async sendPosReuniao() {
@@ -54,11 +57,9 @@ class AtaNotifier {
     }
   }
 
-  async sendAlertaUrgente() {
+  async sendAlertaIntermediario() {
     try {
       const groupId = this.getGroupId();
-      console.log('🔍 GroupId da ata:', groupId);
-      console.log('🔍 Tipo do groupId:', typeof groupId);
 
       if (!groupId) {
         console.log('⚠️  Grupo não configurado para ata');
@@ -71,28 +72,20 @@ class AtaNotifier {
         return;
       }
 
-      console.log('📊 Analisando dados da planilha...');
+      console.log('📊 Gerando alerta 14h...');
       const analysis = await analyzer.analyze();
-      console.log('✅ Análise concluída:', {
-        sc_urgentes: analysis.sc.urgentes,
-        sc_total: analysis.sc.total,
-        tarefas_atrasadas: analysis.gestao.atrasadas
-      });
 
-      const message = reportBuilder.buildAlertaUrgente(analysis);
+      const message = reportBuilder.buildAlertaIntermediario(analysis);
 
       if (message) {
-        console.log('📱 Enviando mensagem para grupo:', groupId);
-        console.log('📝 Tamanho da mensagem:', message.length, 'caracteres');
-        console.log('📄 Preview:', message.substring(0, 200));
-
+        console.log('📱 Enviando alerta 14h...');
         await this.client.sendMessage(groupId, message);
-        console.log('✅ Alerta urgente enviado');
+        console.log('✅ Alerta 14h enviado');
       } else {
-        console.log('ℹ️  Nenhum alerta urgente necessário no momento');
+        console.log('ℹ️  Sem alertas críticos no momento');
       }
     } catch (error) {
-      console.error('❌ Erro ao enviar alerta urgente:', error);
+      console.error('❌ Erro ao enviar alerta 14h:', error);
       console.error('Stack trace:', error.stack);
     }
   }
@@ -122,14 +115,14 @@ class AtaNotifier {
 
       const analysis = await analyzer.analyze();
 
-      console.log('--- RELATÓRIO PÓS-REUNIÃO ---');
+      console.log('--- RELATÓRIO PÓS-REUNIÃO (08h30) ---');
       console.log(reportBuilder.buildPosReuniao(analysis));
 
-      console.log('\n--- ALERTA URGENTE ---');
-      const alerta = reportBuilder.buildAlertaUrgente(analysis);
+      console.log('\n--- ALERTA INTERMEDIÁRIO (14h) ---');
+      const alerta = reportBuilder.buildAlertaIntermediario(analysis);
       console.log(alerta || '(Nenhum alerta necessário)');
 
-      console.log('\n--- RESUMO FIM DO DIA ---');
+      console.log('\n--- RESUMO FIM DO DIA (18h) ---');
       console.log(reportBuilder.buildResumoFimDia(analysis));
 
       console.log('\n✅ Teste concluído\n');
