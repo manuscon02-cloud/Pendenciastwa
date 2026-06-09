@@ -292,14 +292,32 @@ async function loadGroups() {
 
 function renderGroups() {
   const container = document.getElementById('groupsList');
-  container.innerHTML = groups.map(group => `
-    <div class="group-item ${config.ata_group_id === group.id._serialized ? 'selected' : ''}"
-         data-id="${group.id._serialized}"
-         data-name="${group.name}">
-      <span>${group.name} (${group.participants || 0} participantes)</span>
-      <span style="color: var(--accent);">${config.ata_group_id === group.id._serialized ? '✓' : ''}</span>
-    </div>
-  `).join('');
+
+  // Filtra grupos válidos - backend retorna id como string diretamente
+  const validGroups = groups.filter(group => {
+    const id = group.id;
+    return id && typeof id === 'string' && id !== 'undefined' && id !== 'null';
+  });
+
+  if (validGroups.length === 0) {
+    container.innerHTML = '<div class="status status-error">❌ Nenhum grupo válido encontrado</div>';
+    container.classList.remove('hidden');
+    return;
+  }
+
+  container.innerHTML = validGroups.map(group => {
+    const groupId = group.id; // Backend já retorna string serializada
+    const isSelected = config.ata_group_id === groupId;
+
+    return `
+      <div class="group-item ${isSelected ? 'selected' : ''}"
+           data-id="${groupId}"
+           data-name="${group.name || 'Sem nome'}">
+        <span>${group.name || 'Sem nome'} (${group.participants || 0} participantes)</span>
+        <span style="color: var(--accent);">${isSelected ? '✓' : ''}</span>
+      </div>
+    `;
+  }).join('');
 
   container.classList.remove('hidden');
 
@@ -311,8 +329,10 @@ function renderGroups() {
 
       console.log('Grupo selecionado:', { groupId, groupName });
 
-      if (!groupId || groupId === 'undefined') {
-        alert('❌ Erro: ID do grupo inválido');
+      // Validação mais robusta
+      if (!groupId || groupId === 'undefined' || groupId === 'null' || groupId.trim() === '') {
+        console.error('ID inválido:', groupId);
+        alert('❌ Erro: ID do grupo inválido. Tente recarregar os grupos.');
         return;
       }
 
