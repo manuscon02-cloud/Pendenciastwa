@@ -18,9 +18,9 @@ class AtaNotifier {
       })
     );
 
-    // 14h - Alerta intermediário
+    // 15h - Alerta intermediário
     this.jobs.push(
-      cron.schedule('0 14 * * 1-5', () => this.sendAlertaIntermediario(), {
+      cron.schedule('0 15 * * 1-5', () => this.sendAlertaIntermediario(), {
         timezone: 'America/Sao_Paulo'
       })
     );
@@ -34,7 +34,7 @@ class AtaNotifier {
 
     console.log('✅ Notificador de ata inicializado');
     console.log('   📅 08h30: Relatório pós-reunião (Segunda a Sexta)');
-    console.log('   ⚠️  14h00: Alerta intermediário (Segunda a Sexta)');
+    console.log('   ⏰ 15h00: Checkpoint intermediário (Segunda a Sexta)');
     console.log('   📊 18h00: Resumo do dia (Segunda a Sexta)');
   }
 
