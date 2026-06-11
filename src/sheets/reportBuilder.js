@@ -1,4 +1,8 @@
 class ReportBuilder {
+  constructor() {
+    console.log('📊 ReportBuilder v2.1 carregado com contexto completo');
+  }
+
   // 08h30 - PÓS-REUNIÃO (RICO EM INFORMAÇÃO)
   buildPosReuniao(analysis) {
     const hoje = new Date().toLocaleDateString('pt-BR');

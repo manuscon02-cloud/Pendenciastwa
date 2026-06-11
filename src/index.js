@@ -34,7 +34,7 @@ function applyEnvConfig(db) {
 }
 
 async function start() {
-  console.log('🚀 Iniciando sistema de pendências...\n');
+  console.log('🚀 Iniciando sistema de pendências v2.1 (contexto completo)...\n');
 
   initDB();
   applyEnvConfig(getDB());
