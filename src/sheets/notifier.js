@@ -50,7 +50,7 @@ class AtaNotifier {
       const analysis = await analyzer.analyze();
       const message = reportBuilder.buildPosReuniao(analysis);
 
-      await this.client.sendMessage(groupId, message);
+      await this.client.sendLongMessage(groupId, message);
       console.log('✅ Relatório pós-reunião enviado');
     } catch (error) {
       console.error('❌ Erro ao enviar relatório pós-reunião:', error.message);
@@ -79,7 +79,7 @@ class AtaNotifier {
 
       if (message) {
         console.log('📱 Enviando alerta 14h...');
-        await this.client.sendMessage(groupId, message);
+        await this.client.sendLongMessage(groupId, message);
         console.log('✅ Alerta 14h enviado');
       } else {
         console.log('ℹ️  Sem alertas críticos no momento');
@@ -102,7 +102,7 @@ class AtaNotifier {
       const analysis = await analyzer.analyze();
       const message = reportBuilder.buildResumoFimDia(analysis);
 
-      await this.client.sendMessage(groupId, message);
+      await this.client.sendLongMessage(groupId, message);
       console.log('✅ Resumo fim do dia enviado');
     } catch (error) {
       console.error('❌ Erro ao enviar resumo fim do dia:', error.message);

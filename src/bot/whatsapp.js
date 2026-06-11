@@ -139,6 +139,36 @@ async function sendMessage(to, text, mentions = []) {
   return client.sendMessage(to, text, { mentions });
 }
 
+async function sendLongMessage(to, text, mentions = []) {
+  if (!isReady || !client) throw new Error('WhatsApp não conectado');
+
+  // Quebra por seções (procura por linhas divisórias)
+  const sections = text.split('━━━━━━━━━━━━━━━━━━━━━');
+
+  // Se só tem 1 seção (sem divisórias), envia direto
+  if (sections.length === 1) {
+    return client.sendMessage(to, text, { mentions });
+  }
+
+  // Envia cada seção separadamente
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i].trim();
+    if (!section) continue;
+
+    // Adiciona a linha divisória de volta (exceto na última seção)
+    const msgToSend = i < sections.length - 1
+      ? section + '\n━━━━━━━━━━━━━━━━━━━━━'
+      : section;
+
+    await client.sendMessage(to, msgToSend, { mentions });
+
+    // Delay pequeno entre mensagens para não spammar
+    if (i < sections.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+  }
+}
+
 async function getGroups() {
   if (!isReady || !client) return [];
   const chats = await client.getChats();
@@ -147,4 +177,4 @@ async function getGroups() {
     .map(c => ({ id: c.id._serialized, name: c.name, participants: c.participants?.length || 0 }));
 }
 
-module.exports = { initWhatsApp, sendMessage, getGroups, getClient, getQRCode, isClientReady };
+module.exports = { initWhatsApp, sendMessage, sendLongMessage, getGroups, getClient, getQRCode, isClientReady };
