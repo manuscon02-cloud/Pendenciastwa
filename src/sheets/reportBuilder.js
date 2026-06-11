@@ -293,6 +293,15 @@ class ReportBuilder {
           if (item.projeto) msg += `     🎯 Projeto: ${item.projeto}\n`;
           if (item.ocorrencia) msg += `     📋 Contexto: ${item.ocorrencia}\n`;
 
+          // Alerta se falta informação importante
+          const faltando = [];
+          if (!item.projeto || item.projeto.trim() === '') faltando.push('Projeto');
+          if (!item.ocorrencia || item.ocorrencia.trim() === '') faltando.push('Contexto');
+
+          if (faltando.length > 0) {
+            msg += `     ⚠️ Falta cadastrar na planilha: ${faltando.join(' e ')}\n`;
+          }
+
           // SEMPRE mostra observação se existir
           if (item.obs && item.obs.trim() !== '') {
             msg += `     💬 Obs: ${item.obs}\n`; // SEM TRUNCAR no resumo 18h
@@ -403,6 +412,17 @@ class ReportBuilder {
             if (item.obra) msg += `     📍 Obra: ${item.obra}\n`;
             if (item.projeto) msg += `     🎯 Projeto: ${item.projeto}\n`;
             if (item.ocorrencia) msg += `     📋 Contexto: ${item.ocorrencia}\n`;
+
+            // Alerta se falta informação importante (só para tarefas, não SCs)
+            if (!item.tipo.includes('SC')) {
+              const faltando = [];
+              if (!item.projeto || item.projeto.trim() === '') faltando.push('Projeto');
+              if (!item.ocorrencia || item.ocorrencia.trim() === '') faltando.push('Contexto');
+
+              if (faltando.length > 0) {
+                msg += `     ⚠️ Falta cadastrar na planilha: ${faltando.join(' e ')}\n`;
+              }
+            }
 
             if (item.prazo) msg += `     ⏰ Prazo: ${item.prazo}`;
             if (item.dias) msg += ` (${item.dias}d em aberto)`;
