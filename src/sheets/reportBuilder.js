@@ -15,7 +15,7 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'SC',
-          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`,
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 80)}`,
           obra: sc.Obra,
           criticidade: '🔴 URGENTE',
           dias: sc.DiasEmAberto,
@@ -32,7 +32,7 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'SC',
-          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 40)}`,
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 80)}`,
           obra: sc.Obra,
           criticidade: '⚠️ Aprovada atrasada',
           dias: sc.DiasEmAberto,
@@ -49,7 +49,7 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'TAREFA',
-          texto: this.truncate(item.Acao, 40),
+          texto: this.truncate(item.Acao, 80),
           obra: item.Obra,
           criticidade: `🔴 ATRASADO`,
           prazo: item.Prazo,
@@ -65,10 +65,11 @@ class ReportBuilder {
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
           tipo: 'TAREFA',
-          texto: this.truncate(item.Acao, 40),
+          texto: this.truncate(item.Acao, 80),
           obra: item.Obra,
           criticidade: '⏰ VENCE HOJE',
-          prazo: item.Prazo
+          prazo: item.Prazo,
+          obs: item.Observacoes
         });
       });
     }
@@ -86,7 +87,7 @@ class ReportBuilder {
         // Mostra TODOS os itens (sem limite)
         itens.forEach(item => {
           msg += `  • ${item.texto}\n`;
-          if (item.obra) msg += `    📍 ${this.truncate(item.obra, 35)}\n`;
+          if (item.obra) msg += `    📍 ${this.truncate(item.obra, 80)}\n`;
           msg += `    ${item.criticidade}`;
           if (item.prazo) msg += ` - Prazo: ${item.prazo}`;
           if (item.dias) msg += ` (${item.dias}d)`;
@@ -162,8 +163,8 @@ class ReportBuilder {
         const resp = sc.Responsavel || 'Sem responsável';
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
-          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 35)}`,
-          obra: this.truncate(sc.Obra, 30),
+          texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 80)}`,
+          obra: this.truncate(sc.Obra, 80),
           dias: sc.DiasEmAberto,
           prazo: sc.DataNecessidade,
           obs: sc.Observacoes
@@ -177,8 +178,8 @@ class ReportBuilder {
         const resp = item.Responsavel || 'Sem responsável';
         if (!porPessoa[resp]) porPessoa[resp] = [];
         porPessoa[resp].push({
-          texto: this.truncate(item.Acao, 35),
-          obra: this.truncate(item.Obra, 30),
+          texto: this.truncate(item.Acao, 80),
+          obra: this.truncate(item.Obra, 80),
           prazo: item.Prazo,
           obs: item.Observacoes
         });
@@ -239,7 +240,7 @@ class ReportBuilder {
       msg += `⏳ SC MAIS ANTIGAS:\n`;
       analysis.sc.detalhes.maisAntigas.slice(0, 3).forEach(sc => {
         msg += `• SC ${sc.SC} - ${sc.DiasEmAberto}d (${sc.Responsavel || '?'})\n`;
-        msg += `  ${this.truncate(sc.Descricao, 40)}\n`;
+        msg += `  ${this.truncate(sc.Descricao, 80)}\n`;
       });
       msg += `\n`;
     }
