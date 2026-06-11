@@ -274,6 +274,8 @@ class ReportBuilder {
         porPessoa[resp].push({
           texto: item.Acao || 'Sem descrição', // TEXTO COMPLETO - sem truncar
           obra: item.Obra || '', // TEXTO COMPLETO - sem truncar
+          projeto: item.Projeto || '',
+          ocorrencia: item.Ocorrencia || '',
           status,
           obs: item.Observacoes
         });
@@ -282,16 +284,22 @@ class ReportBuilder {
       msg += `✅ CONCLUÍDO HOJE (${analysis.gestao.concluidasHoje})\n\n`;
 
       Object.entries(porPessoa).forEach(([nome, itens]) => {
-        msg += `👤 ${nome}\n`;
+        msg += `👤 ${nome}\n\n`;
         itens.forEach(item => {
-          msg += `  • ${item.texto} ${item.status}\n`;
-          if (item.obra) msg += `    📍 ${item.obra}\n`;
+          msg += `  ✅ ${item.texto} ${item.status}\n`;
+
+          // Mostra contexto completo
+          if (item.obra) msg += `     📍 Obra: ${item.obra}\n`;
+          if (item.projeto) msg += `     🎯 Projeto: ${item.projeto}\n`;
+          if (item.ocorrencia) msg += `     📋 Contexto: ${item.ocorrencia}\n`;
+
           // SEMPRE mostra observação se existir
           if (item.obs && item.obs.trim() !== '') {
-            msg += `    💬 Obs: ${item.obs}\n`; // SEM TRUNCAR no resumo 18h
+            msg += `     💬 Obs: ${item.obs}\n`; // SEM TRUNCAR no resumo 18h
           }
+
+          msg += `\n`;
         });
-        msg += `\n`;
       });
     } else {
       msg += `ℹ️ Nenhuma tarefa concluída hoje\n\n`;
@@ -341,6 +349,8 @@ class ReportBuilder {
             tipo: '🔴 TAREFA ATRASADA',
             texto: item.Acao || 'Sem descrição', // COMPLETO
             obra: item.Obra || '',
+            projeto: item.Projeto || '',
+            ocorrencia: item.Ocorrencia || '',
             prazo: item.Prazo,
             obs: item.Observacoes
           });
@@ -388,13 +398,19 @@ class ReportBuilder {
           itens.forEach(item => {
             msg += `  ${item.tipo}\n`;
             msg += `  • ${item.texto}\n`;
-            if (item.obra) msg += `    📍 ${item.obra}\n`;
-            if (item.prazo) msg += `    ⏰ Prazo: ${item.prazo}`;
+
+            // Mostra contexto completo
+            if (item.obra) msg += `     📍 Obra: ${item.obra}\n`;
+            if (item.projeto) msg += `     🎯 Projeto: ${item.projeto}\n`;
+            if (item.ocorrencia) msg += `     📋 Contexto: ${item.ocorrencia}\n`;
+
+            if (item.prazo) msg += `     ⏰ Prazo: ${item.prazo}`;
             if (item.dias) msg += ` (${item.dias}d em aberto)`;
             if (item.prazo || item.dias) msg += `\n`;
+
             // SEMPRE mostra observação se existir - SEM TRUNCAR
             if (item.obs && item.obs.trim() !== '') {
-              msg += `    💬 Obs: ${item.obs}\n`;
+              msg += `     💬 Obs: ${item.obs}\n`;
             }
             msg += `\n`;
           });
