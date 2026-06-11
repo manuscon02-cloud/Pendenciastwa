@@ -281,7 +281,8 @@ class ReportBuilder {
         });
       });
 
-      msg += `✅ CONCLUÍDO HOJE (${analysis.gestao.concluidasHoje})\n\n`;
+      msg += `✅ CONCLUÍDO HOJE (${analysis.gestao.concluidasHoje})\n`;
+      msg += `[v2.1 - contexto completo]\n\n`;
 
       Object.entries(porPessoa).forEach(([nome, itens]) => {
         msg += `👤 ${nome}\n\n`;
