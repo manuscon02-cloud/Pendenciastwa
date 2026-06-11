@@ -93,7 +93,7 @@ class ReportBuilder {
           msg += `\n`;
           // SEMPRE mostra observação se existir
           if (item.obs && item.obs.trim() !== '') {
-            msg += `    💬 Obs: ${this.truncate(item.obs, 50)}\n`;
+            msg += `    💬 Obs: ${this.truncate(item.obs, 120)}\n`;
           }
           msg += `\n`; // Linha em branco entre itens
         });
@@ -204,7 +204,7 @@ class ReportBuilder {
           msg += `\n`;
           // SEMPRE mostra observação se existir
           if (item.obs && item.obs.trim() !== '') {
-            msg += `    💬 Obs: ${this.truncate(item.obs, 50)}\n`;
+            msg += `    💬 Obs: ${this.truncate(item.obs, 120)}\n`;
           }
           msg += `\n`; // Linha em branco entre itens
         });
@@ -419,7 +419,7 @@ class ReportBuilder {
         if (!item.Prazo || item.Prazo.trim() === '') {
           semPrazo.push({
             responsavel: item.Responsavel,
-            texto: this.truncate(item.Acao, 40)
+            texto: this.truncate(item.Acao, 120)
           });
         }
       });
@@ -431,7 +431,7 @@ class ReportBuilder {
         if (!sc.DataNecessidade || sc.DataNecessidade.trim() === '') {
           semPrazo.push({
             responsavel: sc.Responsavel,
-            texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 30)}`
+            texto: `SC ${sc.SC}: ${this.truncate(sc.Descricao, 120)}`
           });
         }
       });
