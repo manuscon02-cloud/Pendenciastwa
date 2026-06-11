@@ -370,7 +370,7 @@ router.post('/ata/trigger/alerta', async (req, res) => {
 
     const notifier = new AtaNotifier(getClient());
     notifier.getGroupId = () => groupId;
-    await notifier.sendAlertaUrgente();
+    await notifier.sendAlertaIntermediario();
 
     res.json({ success: true, message: 'Alerta enviado!' });
   } catch (err) {
@@ -477,7 +477,7 @@ router.post('/ata/approve-and-send', async (req, res) => {
         await notifier.sendPosReuniao();
         break;
       case 'alerta':
-        await notifier.sendAlertaUrgente();
+        await notifier.sendAlertaIntermediario();
         break;
       case 'resumoDia':
         await notifier.sendResumoFimDia();
