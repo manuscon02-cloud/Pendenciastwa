@@ -494,4 +494,37 @@ router.post('/ata/approve-and-send', async (req, res) => {
 // ── RESET WHATSAPP (EMERGÊNCIA) ──────────────────────────────────────────────
 router.post('/whatsapp/reset', forceWhatsAppReset);
 
+// ── CORREÇÃO ONE-TIME (IVAN LUCAS) ───────────────────────────────────────────
+router.post('/correcao-ivan', async (req, res) => {
+  try {
+    const { getClient } = require('../bot/whatsapp');
+    const client = getClient();
+
+    if (!client) {
+      return res.status(500).json({ error: 'WhatsApp não está conectado' });
+    }
+
+    const groupId = process.env.GROUP_ID || '120363027764175016@g.us';
+
+    const mensagem = `✅ *CORREÇÃO*
+
+A tarefa do *IVAN LUCAS* sobre confirmação de topografia (Montes Claros) já foi concluída.
+
+Desconsiderar cobrança da última mensagem.
+
+Correção aplicada no sistema! 🔧`;
+
+    await client.sendMessage(groupId, mensagem);
+
+    res.json({
+      success: true,
+      message: 'Correção enviada com sucesso!',
+      groupId
+    });
+  } catch (err) {
+    console.error('❌ Erro ao enviar correção:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
