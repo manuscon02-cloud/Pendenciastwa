@@ -73,7 +73,10 @@ A. Cabeçalho:
 
 B. ✅ CONCLUÍDO HOJE:
 • Liste 1 ou 2 sucessos recentes para motivar o time.
-• Se não tiver nada, pule esta seção.
+• SEMPRE mencione quem concluiu usando o mesmo formato das tarefas:
+  Formato: *NOME_RESPONSÁVEL*: O que foi feito
+  Exemplo: *JEFFERSON*: Integração do injetador agendada em Bauducco
+• Se não tiver nada concluído, pule esta seção.
 
 C. 🏗️ TERMÔMETRO DAS OBRAS:
 • Resuma o status das obras principais usando:
@@ -158,6 +161,8 @@ CABEÇALHO: Use "☀️ PRIORIDADES DO DIA - ${dataSimples} às ${horaAtual}"
 
 ESTRUTURA OBRIGATÓRIA:
 1. ✅ CONCLUÍDO HOJE (se tiver)
+   FORMATO: *NOME_RESPONSÁVEL*: O que foi feito
+   Exemplo: *JEFFERSON*: Integração agendada em Bauducco
 2. 🏗️ TERMÔMETRO DAS OBRAS (🔴🟡🟢)
 3. 🛠️ TAREFAS
    FORMATO: *NOME_RESPONSÁVEL*: Ação específica
@@ -188,6 +193,7 @@ CABEÇALHO: Use "⏰ RETA FINAL - ${dataSimples2} às ${horaAtual2}"
 
 ESTRUTURA OBRIGATÓRIA:
 1. ✅ CONCLUÍDO HOJE (se tiver)
+   FORMATO: *NOME_RESPONSÁVEL*: O que foi feito
 2. 🏗️ TERMÔMETRO DAS OBRAS (🔴🟡🟢)
 3. 🛠️ TAREFAS (apenas o que dá pra fazer HOJE ainda)
    FORMATO: *NOME_RESPONSÁVEL*: Ação específica
