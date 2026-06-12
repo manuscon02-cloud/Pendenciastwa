@@ -27,11 +27,19 @@ class PendenciasAnalyzer {
 
     // Filtrar apenas itens que não estão concluídos
     const ativos = data.filter(item => {
-      const situacao = (item.Situacao || '').toLowerCase();
+      // Se tem data de conclusão (coluna K), NÃO é pendente!
       const dataConclusao = (item.DataConclusao || '').trim();
-      return !situacao.includes('concluído') &&
-             !situacao.includes('concluida') &&
-             dataConclusao === '';
+      if (dataConclusao !== '') {
+        return false; // TEM data de conclusão = já foi feito = IGNORA
+      }
+
+      // Se situação menciona "concluído", também ignora
+      const situacao = (item.Situacao || '').toLowerCase();
+      if (situacao.includes('concluído') || situacao.includes('concluida')) {
+        return false;
+      }
+
+      return true; // Passou nos filtros = É PENDENTE
     });
 
     // Concluídas hoje
@@ -43,7 +51,11 @@ class PendenciasAnalyzer {
     });
 
     // CRÍTICO: Atrasadas (venceram ontem ou antes)
+    // GARANTIA EXTRA: Mesmo dentro de ativos, re-checar se NÃO tem data de conclusão
     const atrasadas = ativos.filter(item => {
+      // Dupla checagem: se tem data conclusão, NUNCA incluir
+      if ((item.DataConclusao || '').trim() !== '') return false;
+
       if (!item.Situacao) return false;
       const situacao = item.Situacao.toLowerCase();
       return situacao.includes('atrasado');
@@ -51,6 +63,9 @@ class PendenciasAnalyzer {
 
     // Vencendo HOJE especificamente
     const venceHoje = ativos.filter(item => {
+      // Dupla checagem: se tem data conclusão, NUNCA incluir
+      if ((item.DataConclusao || '').trim() !== '') return false;
+
       if (!item.Prazo) return false;
       const prazo = googleSheets.parseDate(item.Prazo);
       if (!prazo) return false;
@@ -58,13 +73,16 @@ class PendenciasAnalyzer {
     });
 
     // Aguardando aprovação/liberação
-    const aguardandoAprovacao = ativos.filter(item =>
-      item.Observacoes &&
-      (item.Observacoes.toLowerCase().includes('aguardando aprovação') ||
-       item.Observacoes.toLowerCase().includes('aguardando liberação') ||
-       item.Observacoes.toLowerCase().includes('aguardando retorno') ||
-       item.Observacoes.toLowerCase().includes('aguardando financeiro'))
-    );
+    const aguardandoAprovacao = ativos.filter(item => {
+      // Dupla checagem: se tem data conclusão, NUNCA incluir
+      if ((item.DataConclusao || '').trim() !== '') return false;
+
+      return item.Observacoes &&
+        (item.Observacoes.toLowerCase().includes('aguardando aprovação') ||
+         item.Observacoes.toLowerCase().includes('aguardando liberação') ||
+         item.Observacoes.toLowerCase().includes('aguardando retorno') ||
+         item.Observacoes.toLowerCase().includes('aguardando financeiro'));
+    });
 
     return {
       total: ativos.length,
