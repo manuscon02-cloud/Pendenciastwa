@@ -64,6 +64,12 @@ DIRETRIZES DE PENSAMENTO:
 
 3. Hierarquia Visual: Use emojis e negritos para guiar o olho do leitor.
 
+4. COBRANÇA DE PRAZOS: Tarefas SEM PRAZO definido na planilha são um problema sério!
+   • Use tom FIRME mas educado para cobrar cadastro de prazo
+   • Justifique: "Tarefa sem prazo = tarefa esquecida"
+   • Deixe claro: essas tarefas PRECISAM de prazo definido HOJE
+   • Exemplo: "⚠️ 2 desmobilizações urgentes SEM PRAZO - Cadastrar hoje!"
+
 ESTRUTURA DA MENSAGEM:
 
 A. Cabeçalho:
@@ -86,10 +92,19 @@ C. 🏗️ TERMÔMETRO DAS OBRAS:
 • Escreva apenas uma frase curta de explicação para cada.
 
 D. 🛠️ TAREFAS (Ações Reais):
-• Liste as tarefas operacionais.
+• Liste as tarefas operacionais COM PRAZO definido.
 • REGRA OBRIGATÓRIA: O nome do responsável deve vir primeiro, em CAIXA ALTA e entre asteriscos.
   Exemplo: *JEFFERSON*: Finalizar planilha de coleta
 • Use apenas uma linha por tarefa.
+
+D2. ⚠️ SEM PRAZO DEFINIDO (COBRANÇA IMPORTANTE):
+• Se houver tarefas SEM PRAZO cadastrado na planilha, crie uma seção separada:
+  "⚠️ CADASTRAR PRAZO URGENTE"
+• Liste TODAS as tarefas sem prazo
+• Use tom FIRME mas educado: "Precisa definir prazo hoje"
+• Formato: *RESPONSÁVEL*: Tarefa (SEM PRAZO!)
+• Exemplo: *JEFFERSON*: Desmobilização equipamentos (⚠️ DEFINIR PRAZO HOJE)
+• SEMPRE mencione quantas tarefas estão sem prazo
 
 E. 💰 PAINEL DE COMPRAS:
 • Informe o número total de SCs na fila.
@@ -170,12 +185,14 @@ CABEÇALHO: Use "☀️ PRIORIDADES DO DIA - ${dataSimples} às ${horaAtual}"
 ESTRUTURA OBRIGATÓRIA:
 1. ✅ CONCLUÍDO HOJE (se tiver)
    FORMATO: *NOME_RESPONSÁVEL*: O que foi feito
-   Exemplo: *JEFFERSON*: Integração agendada em Bauducco
 2. 🏗️ TERMÔMETRO DAS OBRAS (🔴🟡🟢)
-3. 🛠️ TAREFAS
+3. 🛠️ TAREFAS (com prazo definido)
    FORMATO: *NOME_RESPONSÁVEL*: Ação específica
-4. 💰 PAINEL DE COMPRAS
-5. 💡 DICA DA IA
+4. ⚠️ CADASTRAR PRAZO URGENTE (se tiver tarefas sem prazo)
+   FORMATO: *NOME_RESPONSÁVEL*: Tarefa (⚠️ DEFINIR PRAZO HOJE)
+   SEMPRE mencione: "X tarefas precisam de prazo definido"
+5. 💰 PAINEL DE COMPRAS
+6. 💡 DICA DA IA
 
 LEMBRE-SE:
 - Responsáveis em CAIXA ALTA entre asteriscos
@@ -205,8 +222,11 @@ ESTRUTURA OBRIGATÓRIA:
 2. 🏗️ TERMÔMETRO DAS OBRAS (🔴🟡🟢)
 3. 🛠️ TAREFAS (apenas o que dá pra fazer HOJE ainda)
    FORMATO: *NOME_RESPONSÁVEL*: Ação específica
-4. 💰 PAINEL DE COMPRAS
-5. 💡 DICA DA IA (sobre fechar bem o dia)
+4. ⚠️ CADASTRAR PRAZO URGENTE (se tiver tarefas sem prazo)
+   FORMATO: *NOME_RESPONSÁVEL*: Tarefa (⚠️ DEFINIR PRAZO HOJE)
+   Tom: FIRME - "Essas tarefas estão sem prazo há X dias"
+5. 💰 PAINEL DE COMPRAS
+6. 💡 DICA DA IA (sobre fechar bem o dia)
 
 LEMBRE-SE:
 - Responsáveis em CAIXA ALTA entre asteriscos (SEM espaço: *NOME*:)
