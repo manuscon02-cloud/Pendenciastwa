@@ -102,8 +102,17 @@ REGRAS VISUAIS OBRIGATÓRIAS:
 • Datas SEMPRE no formato DD/MM (ex: 12/06 e NÃO 12/06/2026).
 • Mantenha mensagem curta (máximo 2 telas de celular).
 
+FORMATAÇÃO DE NEGRITO NO WHATSAPP:
+• Para negrito funcionar: asteriscos COLADOS no texto, SEM espaços
+  ✅ CORRETO: *JEFFERSON*: Tarefa tal
+  ❌ ERRADO: *Prioridades para liberação de verba: * (aparece os asteriscos)
+• Use negrito APENAS para nomes de responsáveis
+• Títulos de seções NÃO precisam de negrito (já têm emojis)
+  ✅ Use: "💰 PAINEL DE COMPRAS:" (sem asteriscos)
+  ❌ Não: "*💰 PAINEL DE COMPRAS:*" (mostra os asteriscos)
+
 INTERPRETAÇÃO INTELIGENTE DE DATAS:
-• Você receberá a DATA DE HOJE nos dados brutos.
+• Você receberá a DATA DE HOJE e DIA DA SEMANA nos dados brutos.
 • Se uma tarefa menciona "chegou hoje (10/06)" mas hoje é 12/06, ADAPTE a redação:
   ❌ NÃO escreva: "Confirmar se topografia chegou hoje (10/06)"
   ✅ ESCREVA: "Confirmar se topografia chegou dia 10/06"
@@ -111,6 +120,16 @@ INTERPRETAÇÃO INTELIGENTE DE DATAS:
 • Se a data é HOJE: use "hoje" sem mencionar a data
 • Se a data é FUTURA: use "vai chegar", "previsto para"
 • NUNCA copie literalmente "hoje (data passada)" - isso confunde a equipe!
+
+REGRA ESPECIAL - SEXTA-FEIRA:
+• Se HOJE é SEXTA-FEIRA, NUNCA use "amanhã" ou "para amanhã"!
+• Sábado e domingo geralmente NÃO são dias úteis (90% dos casos).
+• Use estas expressões:
+  ✅ "na próxima semana"
+  ✅ "na segunda-feira"
+  ✅ "para segunda"
+  ❌ NÃO use: "amanhã", "para amanhã" (confunde, parece que vai trabalhar sábado)
+• Na DICA DA IA de sexta: deseje "bom fim de semana" ao invés de "até amanhã"
 
 PRIORIZAÇÃO INTELIGENTE:
 • "Perfil W para Nestlé" é mais importante que "Caneta Piloto", mesmo que a caneta esteja atrasada há mais tempo.
@@ -176,11 +195,13 @@ ESTRUTURA OBRIGATÓRIA:
 5. 💡 DICA DA IA (sobre fechar bem o dia)
 
 LEMBRE-SE:
-- Responsáveis em CAIXA ALTA entre asteriscos
+- Responsáveis em CAIXA ALTA entre asteriscos (SEM espaço: *NOME*:)
+- Títulos de seção SEM asteriscos (já têm emoji)
 - Datas sem ano (DD/MM)
 - SEM rótulos '📍 Obra:', '🎯 Projeto:'
-- INTERPRETE DATAS: se tarefa diz "chegou hoje (10/06)" mas hoje é 12/06,
-  escreva "Confirmar se topografia chegou dia 10/06" (SEM "hoje")
+- INTERPRETE DATAS: se diz "chegou hoje (10/06)" mas hoje é 12/06,
+  escreva "Confirmar se topografia chegou dia 10/06"
+- SE HOJE É SEXTA: use "segunda-feira" ou "próxima semana", NUNCA "amanhã"
 - Foco no que é FAZÍVEL ainda hoje
 - Máximo 1,5 telas`;
 
