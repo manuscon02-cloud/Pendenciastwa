@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const analyzer = require('./analyzer');
 const reportBuilder = require('./reportBuilder');
 const { sendLongMessage } = require('../bot/whatsapp');
+const ClaudeAnalyzer = require('../ai/claudeAnalyzer');
 
 class AtaNotifier {
   constructor(whatsappClient) {
@@ -49,7 +50,19 @@ class AtaNotifier {
 
       console.log('📊 Gerando relatório pós-reunião...');
       const analysis = await analyzer.analyze();
-      const message = reportBuilder.buildPosReuniao(analysis);
+
+      // Tenta usar IA Claude primeiro
+      let message;
+      if (process.env.ANTHROPIC_API_KEY) {
+        const claudeAnalyzer = new ClaudeAnalyzer();
+        message = await claudeAnalyzer.gerarRelatorioInteligente(analysis, '08h30');
+      }
+
+      // Fallback: se IA falhar ou não tiver API key, usa modelo fixo
+      if (!message) {
+        console.log('⚠️  IA indisponível, usando modelo fixo');
+        message = reportBuilder.buildPosReuniao(analysis);
+      }
 
       await sendLongMessage(groupId, message);
       console.log('✅ Relatório pós-reunião enviado');
@@ -73,15 +86,26 @@ class AtaNotifier {
         return;
       }
 
-      console.log('📊 Gerando alerta 14h...');
+      console.log('📊 Gerando alerta 15h30...');
       const analysis = await analyzer.analyze();
 
-      const message = reportBuilder.buildAlertaIntermediario(analysis);
+      // Tenta usar IA Claude primeiro
+      let message;
+      if (process.env.ANTHROPIC_API_KEY) {
+        const claudeAnalyzer = new ClaudeAnalyzer();
+        message = await claudeAnalyzer.gerarRelatorioInteligente(analysis, '15h30');
+      }
+
+      // Fallback: se IA falhar ou não tiver API key, usa modelo fixo
+      if (!message) {
+        console.log('⚠️  IA indisponível, usando modelo fixo');
+        message = reportBuilder.buildAlertaIntermediario(analysis);
+      }
 
       if (message) {
-        console.log('📱 Enviando alerta 14h...');
+        console.log('📱 Enviando alerta 15h30...');
         await sendLongMessage(groupId, message);
-        console.log('✅ Alerta 14h enviado');
+        console.log('✅ Alerta 15h30 enviado');
       } else {
         console.log('ℹ️  Sem alertas críticos no momento');
       }
@@ -101,7 +125,19 @@ class AtaNotifier {
 
       console.log('📊 Gerando resumo do dia...');
       const analysis = await analyzer.analyze();
-      const message = reportBuilder.buildResumoFimDia(analysis);
+
+      // Tenta usar IA Claude primeiro
+      let message;
+      if (process.env.ANTHROPIC_API_KEY) {
+        const claudeAnalyzer = new ClaudeAnalyzer();
+        message = await claudeAnalyzer.gerarRelatorioInteligente(analysis, '18h00');
+      }
+
+      // Fallback: se IA falhar ou não tiver API key, usa modelo fixo
+      if (!message) {
+        console.log('⚠️  IA indisponível, usando modelo fixo');
+        message = reportBuilder.buildResumoFimDia(analysis);
+      }
 
       await sendLongMessage(groupId, message);
       console.log('✅ Resumo fim do dia enviado');
