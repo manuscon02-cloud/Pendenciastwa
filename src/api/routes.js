@@ -3,6 +3,7 @@ const router = express.Router();
 const { getDB } = require('../db/database');
 const { getGroups, getQRCode, isClientReady } = require('../bot/whatsapp');
 const { initScheduler, sendReminders, sendDailyReport } = require('../scheduler/cron');
+const { forceWhatsAppReset } = require('./whatsapp-reset');
 
 // ── STATUS ──────────────────────────────────────────────────────────────────
 router.get('/status', (req, res) => {
@@ -489,5 +490,8 @@ router.post('/ata/approve-and-send', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── RESET WHATSAPP (EMERGÊNCIA) ──────────────────────────────────────────────
+router.post('/whatsapp/reset', forceWhatsAppReset);
 
 module.exports = router;
