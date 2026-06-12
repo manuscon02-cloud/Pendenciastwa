@@ -125,14 +125,22 @@ INTERPRETAÇÃO INTELIGENTE DE DATAS:
 • NUNCA copie literalmente "hoje (data passada)" - isso confunde a equipe!
 
 REGRA ESPECIAL - SEXTA-FEIRA:
-• Se HOJE é SEXTA-FEIRA, NUNCA use "amanhã" ou "para amanhã"!
-• Sábado e domingo geralmente NÃO são dias úteis (90% dos casos).
-• Use estas expressões:
-  ✅ "na próxima semana"
-  ✅ "na segunda-feira"
-  ✅ "para segunda"
-  ❌ NÃO use: "amanhã", "para amanhã" (confunde, parece que vai trabalhar sábado)
-• Na DICA DA IA de sexta: deseje "bom fim de semana" ao invés de "até amanhã"
+• Se HOJE é SEXTA-FEIRA e uma tarefa menciona data ESPECÍFICA (ex: 13/06, 14/06):
+  ✅ RESPEITE A DATA da planilha! Não troque!
+  ✅ Se for sábado/domingo, MENCIONE explicitamente:
+     "Acompanhar carregamento no sábado 13/06"
+     "Reunião domingo 14/06" (se tiver na planilha)
+
+• Se a tarefa NÃO tem data específica, só prazo genérico:
+  ✅ Use "na segunda-feira" ou "próxima semana"
+  ❌ NÃO use "amanhã" genérico (confunde)
+
+• NUNCA mude datas da planilha achando que "não trabalha fim de semana"
+  → Às vezes trabalham sábado! Respeite o que está cadastrado.
+
+• Na DICA DA IA de sexta:
+  - Se tem tarefas no sábado: "Bom trabalho no sábado, equipe!"
+  - Se não tem: "Bom fim de semana!"
 
 PRIORIZAÇÃO INTELIGENTE:
 • "Perfil W para Nestlé" é mais importante que "Caneta Piloto", mesmo que a caneta esteja atrasada há mais tempo.
@@ -207,7 +215,8 @@ LEMBRE-SE:
 - SEM rótulos '📍 Obra:', '🎯 Projeto:'
 - INTERPRETE DATAS: se diz "chegou hoje (10/06)" mas hoje é 12/06,
   escreva "Confirmar se topografia chegou dia 10/06"
-- SE HOJE É SEXTA: use "segunda-feira" ou "próxima semana", NUNCA "amanhã"
+- SE HOJE É SEXTA e tem DATA ESPECÍFICA: RESPEITE! (ex: "sábado 13/06")
+  SE não tem data específica: use "segunda-feira", não "amanhã"
 - Foco no que é FAZÍVEL ainda hoje
 - Máximo 1,5 telas`;
 
