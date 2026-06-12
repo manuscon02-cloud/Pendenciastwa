@@ -102,6 +102,16 @@ REGRAS VISUAIS OBRIGATÓRIAS:
 • Datas SEMPRE no formato DD/MM (ex: 12/06 e NÃO 12/06/2026).
 • Mantenha mensagem curta (máximo 2 telas de celular).
 
+INTERPRETAÇÃO INTELIGENTE DE DATAS:
+• Você receberá a DATA DE HOJE nos dados brutos.
+• Se uma tarefa menciona "chegou hoje (10/06)" mas hoje é 12/06, ADAPTE a redação:
+  ❌ NÃO escreva: "Confirmar se topografia chegou hoje (10/06)"
+  ✅ ESCREVA: "Confirmar se topografia chegou dia 10/06"
+• Se a data é PASSADA: use "chegou", "foi feito", "ocorreu"
+• Se a data é HOJE: use "hoje" sem mencionar a data
+• Se a data é FUTURA: use "vai chegar", "previsto para"
+• NUNCA copie literalmente "hoje (data passada)" - isso confunde a equipe!
+
 PRIORIZAÇÃO INTELIGENTE:
 • "Perfil W para Nestlé" é mais importante que "Caneta Piloto", mesmo que a caneta esteja atrasada há mais tempo.
 • Priorize por impacto na obra e valor de negócio, não apenas por data.
@@ -139,6 +149,8 @@ LEMBRE-SE:
 - Responsáveis em CAIXA ALTA entre asteriscos
 - Datas sem ano (DD/MM)
 - SEM rótulos '📍 Obra:', '🎯 Projeto:'
+- INTERPRETE DATAS: se tarefa diz "chegou hoje (10/06)" mas hoje é 12/06,
+  escreva "Confirmar se topografia chegou dia 10/06" (SEM "hoje")
 - Máximo 2 telas`;
 
       case '15h30':
@@ -167,6 +179,8 @@ LEMBRE-SE:
 - Responsáveis em CAIXA ALTA entre asteriscos
 - Datas sem ano (DD/MM)
 - SEM rótulos '📍 Obra:', '🎯 Projeto:'
+- INTERPRETE DATAS: se tarefa diz "chegou hoje (10/06)" mas hoje é 12/06,
+  escreva "Confirmar se topografia chegou dia 10/06" (SEM "hoje")
 - Foco no que é FAZÍVEL ainda hoje
 - Máximo 1,5 telas`;
 
@@ -195,7 +209,13 @@ Máximo 2 telas de celular!`;
    * Monta dados brutos estruturados para a IA
    */
   montarDadosBrutos(analysis) {
-    let dados = `📊 DADOS BRUTOS DO SISTEMA:\n\n`;
+    const hoje = new Date();
+    const hojeBR = hoje.toLocaleDateString('pt-BR');
+    const diaSemana = hoje.toLocaleDateString('pt-BR', { weekday: 'long' });
+
+    let dados = `📊 DADOS BRUTOS DO SISTEMA\n\n`;
+    dados += `DATA DE HOJE: ${hojeBR} (${diaSemana})\n`;
+    dados += `IMPORTANTE: Use esta data como referência para interpretar prazos!\n\n`;
 
     // GESTÃO (Tarefas operacionais)
     dados += `=== GESTÃO COMPARTILHADA (Tarefas Operacionais) ===\n`;
