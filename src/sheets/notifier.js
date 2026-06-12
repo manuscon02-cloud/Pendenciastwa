@@ -13,31 +13,32 @@ class AtaNotifier {
   init(getGroupId) {
     this.getGroupId = getGroupId;
 
-    // 08h30 - Pós-reunião
+    // 08h30 - Pós-reunião (Segunda a Sexta)
     this.jobs.push(
       cron.schedule('30 8 * * 1-5', () => this.sendPosReuniao(), {
         timezone: 'America/Sao_Paulo'
       })
     );
 
-    // 15h30 - Alerta intermediário
+    // 15h - Checkpoint (Segunda a Quinta)
     this.jobs.push(
-      cron.schedule('30 15 * * 1-5', () => this.sendAlertaIntermediario(), {
+      cron.schedule('0 15 * * 1-4', () => this.sendAlertaIntermediario(), {
         timezone: 'America/Sao_Paulo'
       })
     );
 
-    // 18h - Resumo do dia
+    // 14h - Checkpoint (Sexta-feira)
     this.jobs.push(
-      cron.schedule('0 18 * * 1-5', () => this.sendResumoFimDia(), {
+      cron.schedule('0 14 * * 5', () => this.sendAlertaIntermediario(), {
         timezone: 'America/Sao_Paulo'
       })
     );
 
     console.log('✅ Notificador de ata inicializado');
     console.log('   📅 08h30: Relatório pós-reunião (Segunda a Sexta)');
-    console.log('   ⏰ 15h30: Checkpoint intermediário (Segunda a Sexta)');
-    console.log('   📊 18h00: Resumo do dia (Segunda a Sexta)');
+    console.log('   ⏰ 15h00: Checkpoint (Segunda a Quinta)');
+    console.log('   ⏰ 14h00: Checkpoint (Sexta-feira)');
+    console.log('   🚫 Sábado e Domingo: SEM envios');
   }
 
   async sendPosReuniao() {
