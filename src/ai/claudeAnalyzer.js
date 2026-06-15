@@ -107,12 +107,16 @@ D2. ⚠️ SEM PRAZO DEFINIDO (COBRANÇA IMPORTANTE):
 • SEMPRE mencione quantas tarefas estão sem prazo
 
 E. 💰 PAINEL DE COMPRAS:
-• Informe o número total de SCs na fila.
-• Cite 2 ou 3 itens que são prioridade máxima para o financeiro liberar (ex: Perfil W).
-• Tom neutro, sem cobrar a equipe.
+• Informe o número total de SCs na fila e quantas são urgentes.
+• Cite 2 ou 3 itens prioritários para conhecimento (ex: Perfil W, Consumíveis).
+• Tom NEUTRO e DISCRETO - NUNCA mencione "dias de atraso", "atrasado" ou "pendente há X dias".
+• NUNCA exponha o setor financeiro - trate apenas como "fila de aprovação" ou "aguardando liberação".
+• Exemplo CORRETO: "Prioridades: Perfil W (Montes Claros), Consumíveis de Inspeção"
+• Exemplo ERRADO: "Perfil W atrasado há 6 dias" ❌
 
 F. 💡 DICA DA IA:
-• Crie uma frase de encerramento estratégica e motivadora baseada nos dados do dia.
+• REMOVER ESTA SEÇÃO - NÃO incluir dica/frase motivacional no final.
+• A mensagem termina no Painel de Compras.
 
 REGRAS VISUAIS OBRIGATÓRIAS:
 • Proibido usar rótulos como '📍 Obra:', '🎯 Projeto:', '📋 Contexto:', '⏰ Prazo:'.
@@ -191,8 +195,9 @@ ESTRUTURA OBRIGATÓRIA:
 4. ⚠️ CADASTRAR PRAZO URGENTE (se tiver tarefas sem prazo)
    FORMATO: *NOME_RESPONSÁVEL*: Tarefa (⚠️ DEFINIR PRAZO HOJE)
    SEMPRE mencione: "X tarefas precisam de prazo definido"
-5. 💰 PAINEL DE COMPRAS
-6. 💡 DICA DA IA
+5. 💰 PAINEL DE COMPRAS (SEM mencionar dias de atraso, apenas itens prioritários)
+
+FIM DA MENSAGEM - NÃO incluir dicas ou frases motivacionais.
 
 LEMBRE-SE:
 - Responsáveis em CAIXA ALTA entre asteriscos
@@ -224,9 +229,10 @@ ESTRUTURA OBRIGATÓRIA:
    FORMATO: *NOME_RESPONSÁVEL*: Ação específica
 4. ⚠️ CADASTRAR PRAZO URGENTE (se tiver tarefas sem prazo)
    FORMATO: *NOME_RESPONSÁVEL*: Tarefa (⚠️ DEFINIR PRAZO HOJE)
-   Tom: FIRME - "Essas tarefas estão sem prazo há X dias"
-5. 💰 PAINEL DE COMPRAS
-6. 💡 DICA DA IA (sobre fechar bem o dia)
+   Tom: FIRME mas educado
+5. 💰 PAINEL DE COMPRAS (SEM mencionar dias de atraso, apenas itens prioritários)
+
+FIM DA MENSAGEM - NÃO incluir dicas ou frases motivacionais.
 
 LEMBRE-SE:
 - Responsáveis em CAIXA ALTA entre asteriscos (SEM espaço: *NOME*:)
