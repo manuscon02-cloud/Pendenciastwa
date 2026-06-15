@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const { version } = require('../package.json');
 const { initDB, getDB } = require('./db/database');
 const { initWhatsApp, getClient } = require('./bot/whatsapp');
 const { handleMessage } = require('./bot/handlers');
@@ -8,6 +9,9 @@ const { initScheduler } = require('./scheduler/cron');
 const routes = require('./api/routes');
 const AtaNotifier = require('./sheets/notifier');
 const googleSheets = require('./sheets/googleSheets');
+
+console.log(`🤖 BOT PENDÊNCIAS TWA - v${version}`);
+console.log(`✅ Filtro coluna K ATIVO - tarefas concluídas NÃO serão cobradas`);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
