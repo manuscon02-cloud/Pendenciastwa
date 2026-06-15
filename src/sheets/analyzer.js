@@ -25,11 +25,14 @@ class PendenciasAnalyzer {
     const ontem = new Date(hoje);
     ontem.setDate(ontem.getDate() - 1);
 
+    console.log(`📊 Analisando ${data.length} registros da planilha...`);
+
     // Filtrar apenas itens que não estão concluídos
     const ativos = data.filter(item => {
       // Se tem data de conclusão (coluna K), NÃO é pendente!
       const dataConclusao = (item.DataConclusao || '').trim();
       if (dataConclusao !== '') {
+        console.log(`✅ IGNORANDO tarefa concluída: ${item.Acao?.substring(0, 50)} (DataConclusao: ${dataConclusao})`);
         return false; // TEM data de conclusão = já foi feito = IGNORA
       }
 
@@ -41,6 +44,8 @@ class PendenciasAnalyzer {
 
       return true; // Passou nos filtros = É PENDENTE
     });
+
+    console.log(`✅ Filtro aplicado: ${data.length} registros → ${ativos.length} pendentes (${data.length - ativos.length} ignoradas por DataConclusao/Situacao)`);
 
     // Concluídas hoje
     const concluidasHoje = data.filter(item => {
